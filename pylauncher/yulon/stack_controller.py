@@ -21,7 +21,7 @@ from pathlib import Path
 
 from yulon import docker, platform
 from yulon.catalog import composegen
-from yulon.catalog.catalog import SingleEntry
+from yulon.catalog.catalog import SingleEntry, load_catalog
 from yulon.catalog.stack_install import missing_ready_lines, stack_of
 from yulon.log import get_logger
 from yulon.single_controller import RUNNING, STARTING, STOPPED, UNKNOWN, SingleServerError
@@ -33,6 +33,19 @@ STOP_TIMEOUT_SECONDS = 120.0
 
 _STOPPED_STATES = ("exited", "dead", "created")
 """What Docker calls a container that is not running and not about to be."""
+
+
+def server_named_by(container: str) -> str | None:
+    """The name of the single server in the bundled catalog that runs `container`, if any.
+
+    It lets a refused Start name the server to stop ("WoW Forever") rather than one of its
+    containers ("wowforever-bnet"). Two Forever-login servers both need port 1119, so one
+    of them is always the holder when the other is started.
+    """
+    for entry in load_catalog().single:
+        if container in entry.containers():
+            return entry.name
+    return None
 
 
 @dataclass(frozen=True)
@@ -47,6 +60,7 @@ class StackControlSeams:
     up: Callable[..., None] = docker.compose_up_all
     stop: Callable[..., None] = docker.compose_stop_all
     follow: Callable[[Path, Sequence[str]], Iterator[str]] = docker.compose_follow_logs
+    server_of: Callable[[str], str | None] = server_named_by
 
 
 class StackController:
@@ -112,6 +126,8 @@ class StackController:
     def start(self, *, account: str = "", client_dir: Path | None = None) -> None:
         """Bring the stack up. Refuses while somebody else's container holds one of its ports.
 
+        The refusal names the server a holding container belongs to, so the player is told
+        which one to stop. A container no catalog server runs is named as itself.
         `account` and `client_dir` are the process runtime's (`SingleServer`): a stack's
         client logs in through its loader, at its own prompt.
         """
@@ -120,10 +136,11 @@ class StackController:
             name for name in self._seams.port_conflicts(self.entry.host_ports()) if name not in ours
         ]
         if held:
+            holders = sorted({self._seams.server_of(name) or name for name in held})
             raise SingleServerError(
                 f"{self.entry.name} needs ports "
                 f"{', '.join(str(p) for p in self.entry.host_ports())}, and "
-                f"{', '.join(sorted(held))} is running on one of them. Stop it first."
+                f"{', '.join(holders)} is running on one of them. Stop it first."
             )
         try:
             self._seams.up(self.server_dir)

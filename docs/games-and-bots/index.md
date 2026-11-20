@@ -12,6 +12,7 @@ The games Yu'lon can install, what you bring for each, and how the bots on your 
 - [WoW Vanilla](/games-and-bots/wow-vanilla.md) - Vanilla 1.12.1 on CMaNGOS
 - [WoW TBC](/games-and-bots/wow-tbc.md) - The Burning Crusade 2.4.3 on CMaNGOS
 - [WoW Mists of Pandaria](/games-and-bots/wow-mists-of-pandaria.md) - the 5.4.8 Pandaria server with 500 bots
+- [WoW Forever Unbound](/games-and-bots/wow-forever-unbound.md) - the multi-class WoW Forever realm and its Mentor
 - [Playerbots: what they are](/games-and-bots/playerbots-overview.md) - the bots, the Bots tab and City Bots
 - [Change how many bots your server runs](/games-and-bots/bot-population.md) - the Random bots box, rebuild and delete
 - [Playerbots settings and playerbots.conf](/games-and-bots/playerbots-conf.md) - what Yu'lon sets and what is yours to edit

@@ -1,0 +1,48 @@
+schema: spec-driven
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
+
+context: |
+  Yu'lon (pylauncher/) is a typed Python 3.11+ launcher; follow pyplan/style-guide.md.
+  Game servers run as Docker stacks; WoW Forever's server is a digest-pinned prebuilt image.
+  Never distribute game assets/client files. Never use full trademarked game names (use "WoW").
+  Every new external write needs a row in pyplan/write-ledger.md.
+  WoW Forever is not on Yulon yet: base on origin/fix/t888-forever-must-fixes; rebase with --onto when upstream merges it.
+  ForeverCore is Karrz1/TrinityCore forever @ 5c8b18a (release 0.1.36); credit Karrz, advocaite, TrinityCore; any image must ship its GPL-2 source and patches.
+  The Forever client is Classic 1.60.1 (70707/70888, CASC): change it only via hotfix rows, Lua addons or server code.
+  PlayerbotV2 bots (WorldSession::IsBot) must behave exactly as before.
+  Never copy Ascension or Conquest of Azeroth code or data; follow Wrath Unbound's design (DaddyCool) for multi-class.
+rules:
+  proposal:
+    - State which branch the change is based on and what is out of scope
+  tasks:
+    - Include tests under pylauncher/tests for every launcher-side change

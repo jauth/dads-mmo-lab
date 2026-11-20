@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from yulon import docker, forever_account, forever_key, forever_play, forever_trust, platform
 from yulon.catalog import composegen, stack_install
-from yulon.catalog.catalog import ForeverLogin, SingleEntry, SinglePlay, load_catalog
+from yulon.catalog.catalog import Catalog, ForeverLogin, SingleEntry, SinglePlay, load_catalog
 from yulon.catalog.installer import InstallerError, InstallOptions
 from yulon.catalog.stack_install import (
     STACK_TEMPLATES,
@@ -34,6 +34,7 @@ from yulon.catalog.stack_install import (
     stages_of,
 )
 from yulon.single_play import PlayRefusal
+from yulon.state import KnownInstall
 
 CATALOG = load_catalog()
 FOREVER: SingleEntry = CATALOG.get_single("wow-forever")
@@ -852,6 +853,45 @@ def test_a_missing_fallback_ca_still_removes_the_tagged_hosts_line(tmp_path: Pat
     assert all(c[0] != "certutil" for c in commands), "no CA to delete"
 
 
+def _with_a_second_forever_entry() -> Catalog:
+    """The shipped catalog plus a second Forever-login entry under another id (like Unbound)."""
+    second = FOREVER.model_copy(update={"id": "wow-forever-second"})
+    return CATALOG.model_copy(update={"single": (*CATALOG.single, second)})
+
+
+def test_every_forevercore_entry_with_a_forever_login_shares_it_and_no_other_does() -> None:
+    """The login is keyed on the family and `play.forever`, never on the id `wow-forever`."""
+    assert FOREVER.shares_the_forever_login()
+    assert not CATALOG.get_single("ffxi").shares_the_forever_login(), "a stack, but not Forever"
+    no_login = FOREVER.model_copy(update={"play": None})
+    assert not no_login.shares_the_forever_login(), "no Forever Play, so no shared login"
+
+
+def test_removing_one_forever_install_keeps_the_hosts_line_for_another_entrys(
+    tmp_path: Path,
+) -> None:
+    """Removing a second Forever-login entry keeps the line WoW Forever still resolves by."""
+    catalog = _with_a_second_forever_entry()
+    forever = KnownInstall(game="wow-forever", server_dir=tmp_path / "forever")
+    second = KnownInstall(game="wow-forever-second", server_dir=tmp_path / "second")
+    installs = [forever, second]
+    assert forever_play.hosts_line_needed_elsewhere(catalog, installs, second.server_dir)
+    assert forever_play.hosts_line_needed_elsewhere(catalog, installs, forever.server_dir)
+
+
+def test_removing_the_last_forever_install_strips_the_hosts_line(tmp_path: Path) -> None:
+    """Only other folders count, and a server off the Forever login keeps nothing."""
+    catalog = _with_a_second_forever_entry()
+    second = KnownInstall(game="wow-forever-second", server_dir=tmp_path / "second")
+    others = [
+        second,
+        KnownInstall(game="ffxi", server_dir=tmp_path / "ffxi"),
+        KnownInstall(game="wow-wotlk", server_dir=tmp_path / "wotlk"),
+        KnownInstall(game="no-longer-in-the-catalog", server_dir=tmp_path / "gone"),
+    ]
+    assert not forever_play.hosts_line_needed_elsewhere(catalog, others, second.server_dir)
+
+
 def test_the_shared_hosts_line_stays_while_another_install_uses_it(tmp_path: Path) -> None:
     """T888 item 7 (Codex #7): one tagged line serves every WoW Forever install on the box."""
     hosts = tmp_path / "hosts"
@@ -1583,12 +1623,13 @@ def test_play_refuses_a_stopped_server_another_os_and_another_client(tmp_path: P
 
 
 def test_the_catalog_json_keeps_wow_forever_last() -> None:
+    """The Forever entries close the singles: WoW Forever, then WoW Forever Unbound."""
     raw = json.loads(
         (Path(__file__).parent.parent / "yulon" / "catalog" / "catalog.json").read_text(
             encoding="utf-8"
         )
     )
-    assert [e["id"] for e in raw["single"]][-1] == "wow-forever"
+    assert [e["id"] for e in raw["single"]][-2:] == ["wow-forever", "wow-forever-unbound"]
 
 
 def test_a_certificate_whose_body_is_not_base64_raises_rather_than_guessing(

@@ -22,7 +22,7 @@ In order, on the worker thread the tab gives it:
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,10 +37,11 @@ from yulon import (
     single_play,
 )
 from yulon.catalog import stack_install
-from yulon.catalog.catalog import ForeverLogin, SingleEntry
+from yulon.catalog.catalog import Catalog, ForeverLogin, SingleEntry
 from yulon.catalog.installer import InstallerError
 from yulon.catalog.stack_install import CertificatesError, client_problem
 from yulon.log import get_logger
+from yulon.state import KnownInstall
 
 logger = get_logger(__name__)
 
@@ -367,6 +368,24 @@ def play(
         s.keywatch(key, login.region_group, world_port(entry), client_dir=client_dir, before=before)
     logger.info(f"started {exe} for {account}")
     return Played(account=forever_account.typed_name(login), password=password, asked_admin=asked)
+
+
+def hosts_line_needed_elsewhere(
+    catalog: Catalog, installs: Iterable[KnownInstall], server_dir: Path
+) -> bool:
+    """Whether an install other than the one in `server_dir` still needs the tagged hosts line.
+
+    The one `trinity.actual.battle.net` line serves every install whose entry shares the
+    Forever login (`SingleEntry.shares_the_forever_login`), whatever its id: WoW Forever
+    and WoW Forever Unbound both resolve through it. So removing one of them may strip the
+    line only when no other remains (T888), or the other's Play can no longer log in.
+    """
+    for other in installs:
+        if other.server_dir == server_dir or not catalog.is_single(other.game):
+            continue
+        if catalog.get_single(other.game).shares_the_forever_login():
+            return True
+    return False
 
 
 def remove_trust(

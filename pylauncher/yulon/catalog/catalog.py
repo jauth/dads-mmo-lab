@@ -6196,6 +6196,23 @@ class SingleEntry(_Strict):
             return tuple(service.container for service in stack.services)
         return () if self.container is None else (self.container,)
 
+    def shares_the_forever_login(self) -> bool:
+        """Whether the WoW Forever client reaches this server by its one login path.
+
+        A `forevercore` stack whose Play logs in the Forever way. The client always dials
+        port 1119 and finds `play.forever.portal` through one tagged hosts line, so every
+        such install on a computer shares that line, and only one of them can run at a
+        time. This is keyed on the family and the login, never on an entry id: WoW Forever
+        Unbound is a second entry on the same path.
+        """
+        stack = self.install.stack
+        return (
+            stack is not None
+            and stack.family == "forevercore"
+            and self.play is not None
+            and self.play.forever is not None
+        )
+
 
 class Catalog(_Strict):
     """The whole catalog file."""

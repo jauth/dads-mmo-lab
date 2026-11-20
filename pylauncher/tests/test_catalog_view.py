@@ -3361,16 +3361,35 @@ def test_a_dfo_install_is_remembered_by_its_record_and_never_pinned_as_compose(
 # -- Project Kael Phase K2: GameGroup, GameBoxartCard & two-stage CatalogView ----
 
 
+def test_wow_forever_unbound_wears_the_unbound_glyph_and_says_multi_class() -> None:
+    """Its tile reads like WoW Unbound's beside WoW WotLK: the same realm, multi-class."""
+    entry = CATALOG.get_single("wow-forever-unbound")
+    assert catalog_view._CAMPAIGN_GLYPHS[entry.id] == catalog_view._CAMPAIGN_GLYPHS["wow-unbound"]
+    assert catalog_view._CAMPAIGN_SUBTITLES[entry.id] == "WoW Forever Classic, multi-class"
+    assert catalog_view._server_software(entry) == (
+        "ForeverCore with Karrz's PlayerbotV2 bots and Forever Unbound"
+    )
+    words = " ".join(
+        (entry.name, entry.description, *entry.notes, catalog_view._CAMPAIGN_SUBTITLES[entry.id])
+    )
+    assert "Warcraft" not in words and entry.name.startswith("WoW ")
+
+
 def test_group_catalog_entries_groups_wow_and_single_franchises_by_acronym() -> None:
     """Phase K2.1: `Catalog.games` and `Catalog.single` group into WoW, DDON, and DFO.
 
-    WoW Forever, a single server that is a WoW realm, is listed on the WoW card.
+    WoW Forever and WoW Forever Unbound, single servers that are WoW realms, are listed on the
+    WoW card after its server cores, in that order.
     """
     groups = catalog_view.group_catalog_entries(CATALOG, include_single=True)
     assert [g.id for g in groups] == ["wow", "ddon", "dfo", "ffxi"]
     assert [g.title for g in groups] == ["WoW", "DDON", "DFO", "FFXI"]
-    assert groups[0].entries == (*CATALOG.games, CATALOG.get_single("wow-forever"))
-    assert groups[0].subtitle == f"{len(CATALOG.games) + 1} Server Cores"
+    assert groups[0].entries == (
+        *CATALOG.games,
+        CATALOG.get_single("wow-forever"),
+        CATALOG.get_single("wow-forever-unbound"),
+    )
+    assert groups[0].subtitle == f"{len(CATALOG.games) + 2} Server Cores"
     assert groups[1].entries == (CATALOG.get_single("ddon"),)
     assert groups[2].entries == (CATALOG.get_single("dfo"),)
     assert "Beta" in groups[2].subtitle
@@ -3453,7 +3472,8 @@ def test_two_stage_catalog_drill_down_and_upper_left_back_button(
             assert tile is not None and tile.isVisibleTo(view) is True
         for single in CATALOG.single:
             tile = view.findChild(QWidget, f"catalog-tile-{single.id}")
-            on_the_wow_card = single.id == "wow-forever"  # a WoW realm (`group_catalog_entries`)
+            # WoW realms (`group_catalog_entries`)
+            on_the_wow_card = single.id in ("wow-forever", "wow-forever-unbound")
             assert tile is not None and tile.isVisibleTo(view) is on_the_wow_card
 
         # Return to Stage 0 via upper-left Back button

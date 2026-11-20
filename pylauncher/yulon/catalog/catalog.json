@@ -4636,6 +4636,185 @@
           "purpose": "Problems with Yu'lon itself: installing, starting, and this app."
         }
       ]
+    },
+    {
+      "id": "wow-forever-unbound",
+      "name": "WoW Forever Unbound",
+      "status": "beta",
+      "description": "WoW Forever (Classic 1.60.1) as a multi-class realm: The Mentor in each capital teaches your character spells from other classes, free in this first version, to every class that uses mana. Same ForeverCore server, Karrz's bots and your own WoW Forever client as WoW Forever, in a server of its own beside it; run one of the two at a time.",
+      "notes": [
+        "Forever Unbound v1: the same server image and world database release as WoW Forever, plus Yu'lon's Mentor (2026_11_20_00_world_yulon_forever_unbound_mentor.sql, generated from yulon/forever_unbound_catalog.py), applied once by the world server's own updater.",
+        "The Mentor stands in front of a banker in Stormwind, Ironforge, Darnassus, Orgrimmar, Undercity and Thunder Bluff. It teaches rank-1 spells of the other mana classes (Paladin, Hunter, Priest, Shaman, Mage, Warlock, Druid) from each spell's trainer level, free. Warriors and rogues have no mana to cast them with, so the Mentor has nothing for them yet.",
+        "Learned spells appear on the spellbook's General tab and stay across logins. Bots stay single-class: they never visit the Mentor.",
+        "One Forever realm at a time: the client always logs in on port 1119, so WoW Forever and WoW Forever Unbound cannot both run. Both share the one hosts line; removing either keeps it while the other is installed.",
+        "Credits: ForeverCore is advocaite's Forever core on TrinityCore, with Karrz's PlayerbotV2 bots (release 0.1.36, GPL-2). The multi-class design follows Wrath Unbound by DaddyCool, Dad's MMO Lab."
+      ],
+      "emulator": {
+        "name": "ForeverCore + PlayerbotV2 (Karrz)",
+        "sources": [
+          {
+            "repo": "Karrz1/TrinityCore",
+            "branch": "forever",
+            "dest": "src",
+            "rev": "5c8b18ac0712fd7dee1bee2f4cd7ac7e511f122f"
+          }
+        ]
+      },
+      "install": {
+        "default_server_dir": "yulon-forever-unbound",
+        "platforms": [
+          "linux",
+          "windows"
+        ],
+        "stack": {
+          "family": "forevercore",
+          "templates": "wow-forever-unbound/stack",
+          "source": "src",
+          "images": [
+            {
+              "role": "server",
+              "ref": "ghcr.io/dadsmmolab/forever-bots@sha256:ebef1a2ef9dd6123420ddfb4d4be152d0d8846801266391e9d45a254dc7ac5e2",
+              "label": "ForeverCore with Karrz's bots, release 0.1.36"
+            },
+            {
+              "role": "database",
+              "ref": "mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b",
+              "label": "MySQL 8.0"
+            }
+          ],
+          "services": [
+            {
+              "service": "database",
+              "container": "foreverunbound-database",
+              "image": "database"
+            },
+            {
+              "service": "prepare",
+              "container": "foreverunbound-prepare",
+              "image": "server",
+              "once": true
+            },
+            {
+              "service": "world",
+              "container": "foreverunbound-world",
+              "image": "server",
+              "ready": [
+                "(worldserver-daemon) ready"
+              ]
+            },
+            {
+              "service": "bnet",
+              "container": "foreverunbound-bnet",
+              "image": "server",
+              "ready": [
+                "Added realm \""
+              ]
+            }
+          ],
+          "downloads": [
+            {
+              "what": "the world database release TDB_full_forever_2026_10_14",
+              "file": {
+                "url": "https://github.com/Karrz1/TrinityCore/releases/download/forever-tdb-2026-10-14/TDB_full_forever_2026_10_14.7z",
+                "sha256": "373cdca7963927d4d67933032b4b858a811eae0af960d4de4ff19833a88d4f41",
+                "size": 146573540
+              },
+              "dest": "downloads/TDB_full_forever_2026_10_14.7z"
+            }
+          ],
+          "client_extract": {
+            "service": "extract",
+            "image": "server",
+            "what": "the maps, vmaps and the bots' pathfinding meshes",
+            "client": "your WoW Forever 1.60.1 client (build 70707, or a copy of your Battle.net one at 70888 or 70938): the folder that holds _forever_",
+            "exe": "_forever_/Wow.exe",
+            "builds": [
+              {
+                "build": "70707",
+                "exe_size": 85829840
+              },
+              {
+                "build": "70888",
+                "exe_size": 80627920
+              },
+              {
+                "build": "70938"
+              },
+              {
+                "build": "70862"
+              },
+              {
+                "build": "70840"
+              },
+              {
+                "build": "70790"
+              },
+              {
+                "build": "70755"
+              }
+            ]
+          },
+          "certificates": true,
+          "secrets": [
+            "MYSQL_ROOT_PASSWORD",
+            "DB_PASSWORD"
+          ],
+          "ready_seconds": 3600
+        }
+      },
+      "ports": [
+        {
+          "role": "bnet",
+          "port": 1119,
+          "label": "Battle.net login"
+        },
+        {
+          "role": "login",
+          "port": 8082,
+          "label": "Login web service (TLS)"
+        },
+        {
+          "role": "world",
+          "port": 8085,
+          "label": "World server"
+        }
+      ],
+      "play": {
+        "exe": "_forever_/Wow.exe",
+        "args": [
+          "-config",
+          "ForeverLauncher.wtf"
+        ],
+        "client": "your WoW Forever 1.60.1 client (build 70707, or a copy of your Battle.net one at 70888 or 70938): the folder that holds _forever_",
+        "account": false,
+        "forever": {
+          "config": "ForeverLauncher.wtf",
+          "portal": "trinity.actual.battle.net",
+          "public_key": "02596F0D0C061A8B30745988FD72C59E29EC367FB0F341F28E0F08D037BAFC69",
+          "region_group": 8,
+          "ca": "certs/ca.pem",
+          "account_domain": "local",
+          "account_name": "mmodad",
+          "account_password": "pass"
+        }
+      },
+      "help_places": [
+        {
+          "label": "WoW Forever Bots",
+          "url": "https://github.com/Karrz1/Karrz-playerbots-wow-forever/issues",
+          "purpose": "Bugs in the bots and their ForeverBots window."
+        },
+        {
+          "label": "ForeverCore",
+          "url": "https://github.com/Karrz1/TrinityCore/issues",
+          "purpose": "Bugs in the Forever server itself: quests, creatures, spells."
+        },
+        {
+          "label": "Yu'lon",
+          "url": "https://github.com/DadsMmoLab/dads-mmo-lab/issues",
+          "purpose": "Problems with Yu'lon itself: installing, starting, and this app."
+        }
+      ]
     }
   ]
 }

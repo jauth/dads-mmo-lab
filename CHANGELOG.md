@@ -21,6 +21,7 @@ Changed: Opening Yu'lon while it is already running brings the open window to th
 - **Play** on the WoW Forever tab sets up the login once, makes your account and starts the game.
 - WoW Forever plays on a Steam Deck too: **Play** gets GE-Proton once and runs the game in its own Proton prefix.
 - **Add to Steam Deck (Gaming Mode)…** on WoW Forever's tab adds its Server, game and Server Stop tiles to Steam.
+- Install WoW Forever Unbound in beta: a WoW Forever realm where the Mentor teaches you other classes' spells.
 
 ### Fixed
 - **Play** on an FFXI server installed in **Program Files (x86)** can make the game's folders writable.
@@ -32,6 +33,7 @@ Changed: Opening Yu'lon while it is already running brings the open window to th
 - WoW Forever: Holy Strike, Blessing of Light, Salvation, Mutilate and Revoke play their animations again.
 
 ### Changed
+- When a server can't start because another is running, Yu'lon now names the one to stop first.
 
 ## v0.9.32-Public — 2026-11-09
 

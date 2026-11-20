@@ -1,0 +1,42 @@
+# Tasks
+
+## 1. Gate checks and branch
+
+- [x] 1.1 Spellbook spike on a running WoW Forever realm, GM account: a paladin does `.learn 116` (Frostbolt) and `.learn 8921` (Moonfire), then a warrior does `.learn 116`. Record in this change's notes whether each spell shows in the spellbook, can be dragged to a bar, casts, and survives a relog, and that the warrior's cast fails with "not enough mana". Verify: notes written. If spells are hidden, stop and revise the proposal (addon needed).
+- [x] 1.2 Create branch `feat/wow-forever-unbound` from `origin/fix/t888-forever-must-fixes` and add remote `upstream` = `https://github.com/DadsMmoLab/dads-mmo-lab`. Verify: `git merge-base --is-ancestor origin/fix/t888-forever-must-fixes HEAD` succeeds and `git remote -v` lists upstream.
+- [x] 1.3 Check the D3 ID ranges are free in `TDB_full_forever_2026_10_14` and in ForeverCore 0.1.36's `sql/custom/world` (`creature_template`, `creature`, `gossip_menu`, `gossip_menu_option`, `npc_text`, `serverside_spell`, `smart_scripts`). Verify: queries against a WoW Forever world DB return 0 rows. Record the results in design.md D3.
+
+## 2. Shared login for the Forever family (launcher)
+
+- [x] 2.1 Add one typed predicate "entry is a Forever-family Play server" (stack family `forevercore` with `play.forever`) and use it in `main.py`'s removal, so the hosts line is kept while any other Forever-family install remains. Verify: new tests in `pylauncher/tests/test_wow_forever.py` show that removing Unbound with Forever installed keeps the hosts line, and removing the last install strips it.
+- [x] 2.2 Make `StackController.start` name the catalog entry that owns a container holding its ports ("WoW Forever is running; stop it first"), falling back to the container name. Verify: a `test_stack_controller.py` case with seams reporting `wowforever-bnet` on 1119 gets a message naming "WoW Forever", and nothing is started.
+- [x] 2.3 Search `pylauncher/yulon` for logic keyed on the literal `"wow-forever"` and move any behavior check to the predicate. Presentation maps stay keyed by id. Verify: `git grep '"wow-forever"' pylauncher/yulon` shows only `catalog_view.py` presentation keys, and the full test suite passes.
+- [x] 2.4 Update the `pyplan/write-ledger.md` rows touched by 2.1 (the hosts strip condition). Verify: `pytest pylauncher/tests/test_write_ledger.py` passes.
+
+## 3. The Mentor data (server content)
+
+- [x] 3.1 Choose the v1 catalog by D2's rules (rank 1, mana or no cost, no stance, form, pet or totem spells, about 3–5 spells per mana class, the trainer's level in `world.trainer_spell` as the required level, free in v1). Write it as a typed, frozen data module `pylauncher/yulon/forever_unbound_catalog.py`. Verify: a `test_wow_forever_unbound.py` test checks every row has a known mana class, level 1–60 and a unique spell, and that every mana class gets spells from each other mana class.
+- [x] 3.2 Write a typed renderer (`pylauncher/yulon/forever_unbound_sql.py`, one job: catalog to SQL, with a `__main__` that writes the shipped file) that emits `2026_11_20_00_world_yulon_forever_unbound_mentor.sql`: the creature template, 6 capital spawns, gossip menus and text, free options (`BoxMoney` 0), type-15 conditions (class, level, known spell), `serverside_spell` / `_effect` (effect 36), and SmartAI gossip-select → invoker cast (134, triggered) → close. Delete-then-insert of D3 ranges only. Verify: a test re-renders and byte-compares with the shipped file, and another asserts every ID in the file is inside D3's ranges.
+- [x] 3.3 Apply the SQL to a WoW Forever world DB copy with the server's updater (start a scratch install with the file mounted). Verify: the world log shows the file applied with no errors, and `SELECT COUNT(*) FROM creature WHERE id=3100001` returns 6.
+- [x] 3.4 In game: a paladin learns one spell at the Mentor, then opens that class's list again, and a level-too-low character opens the same list. Verify: the spell is learned once with no money taken, it is no longer offered once known, the too-low character is not offered it, and Warriors and Rogues get the "nothing yet" text.
+
+## 4. The catalog entry
+
+- [x] 4.1 Create `pylauncher/catalog/installers/wow-forever-unbound/stack/`. Copy `base.yml.tmpl` and `override.yml.tmpl` from `wow-forever/stack` and add the read-only mount of the Mentor SQL into `/opt/forever/src/sql/custom/world/`. Copy `files/certs-yulon.sh` and the spell-visual hotfix byte for byte, and add the rendered Mentor SQL under `files/sql/`. Verify: a test asserts the copied files are identical to Forever's and that the two templates differ only in the SQL mount lines.
+- [x] 4.2 Add the `wow-forever-unbound` entry to `catalog.json`: name "WoW Forever Unbound", `status: beta`, a description, notes crediting Karrz, advocaite, TrinityCore and DaddyCool, the same `emulator`, `images`, downloads and client extract as `wow-forever`, `foreverunbound-*` containers, `default_server_dir: yulon-forever-unbound`, `play` without `gaming_mode`, and help places. Verify: `test_wow_forever_unbound.py` checks the catalog loads, the server ref equals `wow-forever`'s and is `@sha256:` pinned, no container or folder is shared, and there is no `gaming_mode`.
+- [x] 4.3 Add the presentation in `ui/catalog_view.py` (🌀, "WoW Forever Classic, multi-class", "ForeverCore with Karrz's PlayerbotV2 bots and Forever Unbound") and append the id to `_SINGLES_ON_THE_WOW_CARD`. Verify: a `test_catalog_view.py` case finds both Forever entries on the WoW card in that order with these strings, and no tile text contains a full trademarked name.
+- [x] 4.4 Add `pyplan/write-ledger.md` rows for the new stack files that `_place_stack_files` writes (`<server>/sql/2026_11_20_00_…mentor.sql`, plus the copies). Verify: `pytest pylauncher/tests/test_write_ledger.py` passes.
+- [x] 4.5 Add to `CHANGELOG.md` under `## Unreleased`, one plain player line per change (no backticks, ids or commands, about 120 characters at most). `### New`: "Install WoW Forever Unbound in beta: a WoW Forever realm where the Mentor teaches you other classes' spells." `### Changed`: "When a server can't start because another is running, Yu'lon now names the one to stop first." Verify: `pytest tests/test_changelog_style.py` passes.
+- [x] 4.6 Add a WoW Forever Unbound section to the user guide in plain, friendly language for a non-developer. It covers: what it is, installing it next to WoW Forever, playing one at a time, finding the Mentor in each capital, and that warriors and rogues get nothing in v1. It has a troubleshooting section ("can't start: WoW Forever is running", "the Mentor isn't there", "I can't see a spell": too low a level, already known, or my own class) and credits ForeverCore (advocaite, TrinityCore), Karrz's PlayerbotV2 and the Wrath Unbound design (DaddyCool). Verify: the section exists with each of those parts.
+- [x] 4.7 Install from the CLI harness, which builds the same engine as the Install button: `python -m yulon.install_wiring wow-forever-unbound --client-dir <your WoW Forever client>` (from `pylauncher/`, venv active). Verify: every stage streams to stdout and finishes, and the world log shows the Mentor SQL applied.
+
+## 5. End-to-end check
+
+- [x] 5.1 On Windows: install WoW Forever Unbound beside an installed WoW Forever, press Play, find the Mentor in Orgrimmar and Stormwind, and learn and cast one spell per mana class. Verify: each listed spell casts and survives a relog, bots in a party stay single-class, and starting WoW Forever while Unbound runs is refused with the server's name.
+- [x] 5.2 Remove WoW Forever Unbound while WoW Forever stays installed. Verify: WoW Forever still logs in (hosts line kept, its CA trusted) and Unbound's CA is gone from `LocalMachine\Root`.
+- [x] 5.3 From `pylauncher/` with the venv active, run the four checks in `pyplan/contribution.md`: `pytest`, `mypy yulon main.py`, `ruff check .`, `black --check .`. Verify: all four pass (integration tests may self-skip without Docker).
+
+## Workflow follow-up
+
+- v2 candidates: own `forever-unbound` image (patch through the recovered `build/Dockerfile` + `patches/`) for talents, cross-power casting, proficiencies and keeping off-class skills at login. Also Mentor prices (a C++ Mentor script that checks money before teaching), class unlocks and milestones like Wrath Unbound, and Gaming Mode tiles for the entry.
+- After implementation: `/opsx:archive wow-forever-unbound`.

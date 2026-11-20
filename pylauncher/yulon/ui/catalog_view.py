@@ -532,6 +532,12 @@ _CAMPAIGN_PRESENTATION: dict[str, _CampaignPresentation] = {
         subtitle="WoW Forever Classic with bots",
         software="ForeverCore with Karrz's PlayerbotV2 bots",
     ),
+    # Unbound's glyph, as WoW Unbound is to WoW WotLK: the same realm, multi-class.
+    "wow-forever-unbound": _CampaignPresentation(
+        glyph="🌀",
+        subtitle="WoW Forever Classic, multi-class",
+        software="ForeverCore with Karrz's PlayerbotV2 bots and Forever Unbound",
+    ),
 }
 
 _CAMPAIGN_GLYPHS: dict[str, str] = {k: v.glyph for k, v in _CAMPAIGN_PRESENTATION.items()}
@@ -606,7 +612,7 @@ _SINGLE_GROUP_GLYPHS: dict[str, str] = {
     "ffxi": "sword",
 }
 
-_SINGLES_ON_THE_WOW_CARD: tuple[str, ...] = ("wow-forever",)
+_SINGLES_ON_THE_WOW_CARD: tuple[str, ...] = ("wow-forever", "wow-forever-unbound")
 """Single servers that are WoW realms, listed on the WoW card after its server cores.
 
 A card of their own would be a fifth on Stage 1, and the K4 window (960x640) fits four.

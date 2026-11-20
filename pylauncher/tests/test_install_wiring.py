@@ -856,6 +856,10 @@ _NOT_A_USER_ENTRY_POINT = {
         "checked-in JSON Schema and never runs anything for a user, so there is no "
         "session for it to leave a record of"
     ),
+    "yulon.forever_unbound_sql": (
+        "a developer tool -- `python -m yulon.forever_unbound_sql` rewrites the shipped "
+        "Mentor SQL from the spell list and never runs anything for a user"
+    ),
 }
 
 

@@ -18,7 +18,7 @@ from yulon import docker
 from yulon.catalog.catalog import SingleEntry, load_catalog
 from yulon.catalog.stack_install import stack_of
 from yulon.single_controller import RUNNING, STARTING, STOPPED, UNKNOWN, SingleServerError
-from yulon.stack_controller import StackController, StackControlSeams
+from yulon.stack_controller import StackController, StackControlSeams, server_named_by
 
 FFXI: SingleEntry = load_catalog().get_single("ffxi")
 STACK = stack_of(FFXI)
@@ -129,6 +129,23 @@ def test_start_refuses_a_stranger_on_our_ports_and_names_it(tmp_path: Path) -> N
     with pytest.raises(SingleServerError, match="ffxi-proto-connect-1 is running"):
         _controller(fake, tmp_path).start()
     assert fake.started == []
+
+
+def test_start_names_the_server_whose_container_holds_our_ports(tmp_path: Path) -> None:
+    """Another server's container on our port is named by its server, once per server."""
+    fake = Fake(port_holders=["wowforever-bnet", "wowforever-world"])
+    with pytest.raises(SingleServerError) as refused:
+        _controller(fake, tmp_path).start()
+    assert str(refused.value).endswith(
+        "and WoW Forever is running on one of them. Stop it first."
+    ), "the server, not its containers"
+    assert "wowforever-" not in str(refused.value)
+    assert fake.started == []
+
+
+def test_a_container_no_server_runs_is_named_as_itself() -> None:
+    assert server_named_by("wowforever-bnet") == "WoW Forever"
+    assert server_named_by("some-web-app") is None
 
 
 def test_a_failed_start_says_so_in_a_sentence(tmp_path: Path) -> None:
