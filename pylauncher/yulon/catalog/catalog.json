@@ -4641,10 +4641,11 @@
       "id": "wow-forever-unbound",
       "name": "WoW Forever Unbound",
       "status": "beta",
-      "description": "WoW Forever (Classic 1.60.1) as a multi-class realm: The Mentor in each capital teaches your character spells from other classes, free in this first version, to every class that uses mana. Same ForeverCore server, Karrz's bots and your own WoW Forever client as WoW Forever, in a server of its own beside it; run one of the two at a time.",
+      "description": "WoW Forever (Classic 1.60.1) as a multi-class realm: The Mentor in each capital teaches your character spells from other classes, for what that class's own trainer charges, to every class that uses mana. The same ForeverCore release, Karrz's bots and your own WoW Forever client as WoW Forever, in a server of its own beside it; run one of the two at a time.",
       "notes": [
-        "Forever Unbound v1: the same server image and world database release as WoW Forever, plus Yu'lon's Mentor (2026_11_20_00_world_yulon_forever_unbound_mentor.sql, generated from yulon/forever_unbound_catalog.py), applied once by the world server's own updater.",
-        "The Mentor stands in front of a banker in Stormwind, Ironforge, Darnassus, Orgrimmar, Undercity and Thunder Bluff. It teaches rank-1 spells of the other mana classes (Paladin, Hunter, Priest, Shaman, Mage, Warlock, Druid) from each spell's trainer level, free. Warriors and rogues have no mana to cast them with, so the Mentor has nothing for them yet.",
+        "Server: Yu'lon's own image ghcr.io/jauth/forever-unbound:0.1.36-u1, built from the same Karrz release 0.1.36 source as WoW Forever's with two patches (installers/wow-forever-unbound/patches): the upstream CASC read-only fix, and the Mentor's script npc_yulon_mentor, which takes the price and teaches the spell. The image carries its source, recipe and patches under /opt/forever/src (GPL-2); the recipe is installers/wow-forever-unbound/image. The world database release is WoW Forever's.",
+        "The Mentor's data (2026_11_20_00_world_yulon_forever_unbound_mentor.sql, generated from yulon/forever_unbound_catalog.py) is applied by the world server's own updater. Start brings an older install up to date first, downloading the new server once and keeping its characters.",
+        "The Mentor stands in front of a banker in Stormwind, Ironforge, Darnassus, Orgrimmar, Undercity and Thunder Bluff. It teaches rank-1 spells of the other mana classes (Paladin, Hunter, Priest, Shaman, Mage, Warlock, Druid) from each spell's trainer level, for that spell's own trainer price, shown in the list and in the confirm box. Warriors and rogues have no mana to cast them with, so the Mentor has nothing for them yet.",
         "Learned spells appear on the spellbook's General tab and stay across logins. Bots stay single-class: they never visit the Mentor.",
         "One Forever realm at a time: the client always logs in on port 1119, so WoW Forever and WoW Forever Unbound cannot both run. Both share the one hosts line; removing either keeps it while the other is installed.",
         "Credits: ForeverCore is advocaite's Forever core on TrinityCore, with Karrz's PlayerbotV2 bots (release 0.1.36, GPL-2). The multi-class design follows Wrath Unbound by DaddyCool, Dad's MMO Lab."
@@ -4673,8 +4674,8 @@
           "images": [
             {
               "role": "server",
-              "ref": "ghcr.io/dadsmmolab/forever-bots@sha256:ebef1a2ef9dd6123420ddfb4d4be152d0d8846801266391e9d45a254dc7ac5e2",
-              "label": "ForeverCore with Karrz's bots, release 0.1.36"
+              "ref": "ghcr.io/jauth/forever-unbound@sha256:139848fcfd3da62f6206142de9745c04bc34c0b2ced44d7b1baae7c69289544b",
+              "label": "ForeverCore with Karrz's bots and Yu'lon's Forever Unbound patches, release 0.1.36"
             },
             {
               "role": "database",

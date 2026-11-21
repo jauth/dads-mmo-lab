@@ -1,0 +1,122 @@
+diff --git a/src/server/scripts/Custom/Yulon/yulon_mentor.cpp b/src/server/scripts/Custom/Yulon/yulon_mentor.cpp
+new file mode 100644
+index 0000000..c20efdd
+--- /dev/null
++++ b/src/server/scripts/Custom/Yulon/yulon_mentor.cpp
+@@ -0,0 +1,98 @@
++/*
++ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along
++ * with this program. If not, see <http://www.gnu.org/licenses/>.
++ */
++
++// Yu'lon: WoW Forever Unbound's Mentor (creature 3100001, ScriptName npc_yulon_mentor), who teaches a character
++// spells of classes other than its own, for a price. The design (a Mentor in each capital) is DaddyCool's, from
++// Wrath Unbound; no Wrath Unbound code or data is used here.
++//
++// The script holds no data. Yu'lon's world SQL (sql/custom/world/..._yulon_forever_unbound_mentor.sql) builds the
++// menus, hides what a character may not pick (its own class, too low a level, a spell it knows) with conditions,
++// and gives every spell option its price (BoxMoney) and the spell it teaches (SpellID). Options that open a submenu
++// are left to the core.
++//
++// Why a script at all: WorldSession calls this AI's OnGossipSelect before Player::OnGossipSelect, which is where
++// BoxMoney is checked and taken. SmartAI cannot take money, so a SmartAI Mentor would teach before the price was
++// checked. Returning true here keeps Player::OnGossipSelect from running, so the price is taken exactly once, here.
++
++#include "Creature.h"
++#include "GossipDef.h"
++#include "Log.h"
++#include "Player.h"
++#include "ScriptMgr.h"
++#include "ScriptedCreature.h"
++#include "ScriptedGossip.h"
++#include "SpellMgr.h"
++#include "WorldSession.h"
++
++struct npc_yulon_mentor : public ScriptedAI
++{
++    npc_yulon_mentor(Creature* creature) : ScriptedAI(creature) { }
++
++    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
++    {
++        GossipMenuItem const* item = player->PlayerTalkClass->GetGossipMenu().GetItemByIndex(gossipListId);
++        if (!item || item->ActionMenuID)
++            return false; // a submenu: the core opens it as before
++
++        if (!item->SpellID || *item->SpellID <= 0)
++        {
++            CloseGossipMenuFor(player); // "nothing to teach yet" and the like: only close the menu
++            return true;
++        }
++
++        // Read before anything below can change the menu that holds item.
++        uint32 const spellId = uint32(*item->SpellID);
++        uint64 const price = item->BoxMoney;
++
++        // Bots stay single-class, and a spell already known (learned since the menu opened) costs nothing.
++        if (player->GetSession()->IsBot() || player->HasSpell(spellId))
++        {
++            CloseGossipMenuFor(player);
++            return true;
++        }
++
++        if (!sSpellMgr->GetSpellInfo(spellId, DIFFICULTY_NONE))
++        {
++            TC_LOG_ERROR("scripts", "npc_yulon_mentor: gossip option {} of menu {} names spell {}, which does not exist",
++                item->GossipOptionID, player->PlayerTalkClass->GetGossipMenu().GetMenuId(), spellId);
++            CloseGossipMenuFor(player);
++            return true;
++        }
++
++        if (!player->HasEnoughMoney(price))
++        {
++            player->SendBuyError(BUY_ERR_NOT_ENOUGHT_MONEY, nullptr, 0);
++            CloseGossipMenuFor(player);
++            return true;
++        }
++
++        player->ModifyMoney(-int64(price));
++        player->LearnSpell(spellId, false);
++        CloseGossipMenuFor(player);
++        return true;
++    }
++};
++
++void AddSC_yulon_mentor()
++{
++    RegisterCreatureAI(npc_yulon_mentor);
++}
++
++void AddYulonScripts()
++{
++    AddSC_yulon_mentor();
++}
+diff --git a/src/server/scripts/Custom/custom_script_loader.cpp b/src/server/scripts/Custom/custom_script_loader.cpp
+index 7b15780..1a4f07f 100644
+--- a/src/server/scripts/Custom/custom_script_loader.cpp
++++ b/src/server/scripts/Custom/custom_script_loader.cpp
+@@ -17,10 +17,13 @@
+ 
+ // This is where scripts' loading functions should be declared:
+ void AddClassicScripts();
++// Yu'lon: WoW Forever Unbound (src/server/scripts/Custom/Yulon/)
++void AddYulonScripts();
+ 
+ // The name of this function should match:
+ // void Add${NameOfDirectory}Scripts()
+ void AddCustomScripts()
+ {
+     AddClassicScripts();
++    AddYulonScripts();
+ }

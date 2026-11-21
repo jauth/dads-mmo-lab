@@ -50,6 +50,7 @@ from yulon.log import get_logger
 from yulon.play_launch import LaunchSpec
 from yulon.single_controller import RUNNING, STARTING, STOPPED, SingleServer
 from yulon.single_network import LOOPBACK, FirewallReport, Reach
+from yulon.stack_controller import StackController
 from yulon.ui.folder_picker import pick_folder
 from yulon.ui.help_places import HELP_BUTTON, HelpPlacesBox
 from yulon.ui.icons import dadcraft_icon
@@ -110,6 +111,10 @@ class SingleServerView(QWidget):
 
     The same four the WoW Server tab sends, so the window's removal reads one shape.
     """
+
+    _start_said = Signal(str)
+    """A line a stack's Start says from its own thread (what it updated, a pull's output),
+    queued to the console on the GUI thread (`StackController.say`)."""
 
     def __init__(
         self,
@@ -194,6 +199,10 @@ class SingleServerView(QWidget):
         layout.addWidget(self._section("Server console"))
         self.console = LogPanel(self, shows_failure=False)
         layout.addWidget(self.console, 1)
+        if isinstance(controller, StackController):
+            # Start may download a new server first (minutes): its lines go to the console.
+            self._start_said.connect(self.console.append)
+            controller.say = self._start_said.emit
 
         self._set_buttons(self.realm_badge.status)
         self.apply_theme(resolve_widget_theme(self))

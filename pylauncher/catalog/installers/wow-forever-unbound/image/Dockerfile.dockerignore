@@ -1,0 +1,5 @@
+.git
+build
+out
+# 4.2 GB of historical TrinityCore updates; the compile never reads them (the server reads sql/ from SourceDirectory at runtime)
+sql/old

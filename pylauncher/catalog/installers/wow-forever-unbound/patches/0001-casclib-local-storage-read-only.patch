@@ -1,0 +1,42 @@
+--- a/dep/CascLib/src/CascFiles.cpp
++++ b/dep/CascLib/src/CascFiles.cpp
+@@ -1125,7 +1125,7 @@
+     ULONGLONG FileSize = 0;
+ 
+     // The file open must succeed and also must be of non-zero size
+-    if((pStream = FileStream_OpenFile(szFileName, 0)) != NULL)
++    if((pStream = FileStream_OpenFile(szFileName, STREAM_FLAG_READ_ONLY)) != NULL)
+     {
+         FileStream_GetSize(pStream, &FileSize);
+         FileStream_Close(pStream);
+@@ -1513,7 +1513,7 @@
+         if(!_tcsicmp(BuildTypes[i].szFileName, szFileType))
+         {
+             // We also try to open the file
+-            if((pStream = FileStream_OpenFile(szLocalPath, 0)) != NULL)
++            if((pStream = FileStream_OpenFile(szLocalPath, STREAM_FLAG_READ_ONLY)) != NULL)
+             {
+                 CascStrCopy(BuildFile.szFullPath, _countof(BuildFile.szFullPath), szLocalPath);
+                 BuildFile.szPlainName = GetPlainFileName(BuildFile.szFullPath);
+--- a/dep/CascLib/src/CascOpenFile.cpp
++++ b/dep/CascLib/src/CascOpenFile.cpp
+@@ -82,7 +82,7 @@
+     for(DWORD i = 0; i < SpanCount; i++)
+     {
+         // Open the file span
+-        pFileSpan[i].pStream = pStream = FileStream_OpenFile(szSpanList, BASE_PROVIDER_FILE | STREAM_PROVIDER_FLAT);
++        pFileSpan[i].pStream = pStream = FileStream_OpenFile(szSpanList, STREAM_FLAG_READ_ONLY | BASE_PROVIDER_FILE | STREAM_PROVIDER_FLAT);
+         if(pFileSpan[i].pStream == NULL)
+         {
+             dwErrCode = GetCascError();
+--- a/dep/CascLib/src/CascReadFile.cpp
++++ b/dep/CascLib/src/CascReadFile.cpp
+@@ -75,7 +75,7 @@
+             dwErrCode = FetchCascFile(hs, PathType, pCKeyEntry->EKey, NULL, LocalPath, &ArchiveInfo);
+             if(dwErrCode == ERROR_SUCCESS)
+             {
+-                pStream = FileStream_OpenFile(LocalPath, BASE_PROVIDER_FILE | STREAM_PROVIDER_FLAT);
++                pStream = FileStream_OpenFile(LocalPath, STREAM_FLAG_READ_ONLY | BASE_PROVIDER_FILE | STREAM_PROVIDER_FLAT);
+                 if(pStream != NULL)
+                 {
+                     // Initialize information about the position and size of the file in archive

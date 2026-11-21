@@ -6,17 +6,21 @@ server's own updater applies it once. This module builds the text only; it never
 database. `python -m yulon.forever_unbound_sql` rewrites the shipped file after `SPELLS` changes,
 and `test_wow_forever_unbound.py` fails while the shipped file and this rendering differ.
 
-The design stays inside the core's own data (ForeverCore 0.1.36, read from its source):
-  * The Mentor is a SmartAI creature with a gossip menu: one option per other mana class, each
-    opening that class's list.
-  * Choosing a spell makes the player cast a Yu'lon server-side spell on itself
-    (`SMART_ACTION_INVOKER_CAST`, triggered). Its one effect is `SPELL_EFFECT_LEARN_SPELL`, so the
-    spell is learned and saved like any other (`Player::LearnSpell` has no class check).
+The Mentor's menus and rules are data; what it does when a spell is picked is C++:
+  * The Mentor is a creature with a gossip menu: one option per other mana class, each opening
+    that class's list.
+  * Its `ScriptName` is `npc_yulon_mentor`, the script Yu'lon's server image adds
+    (`catalog/installers/wow-forever-unbound/patches/0002-yulon-mentor-script.patch`). A spell
+    option carries the spell it teaches (`SpellID`) and its price (`BoxMoney`), which the client
+    shows in its confirm box. The script checks the price, takes it, then `Player::LearnSpell`s the
+    spell, which has no class check and is saved like any learned spell. It never teaches a bot.
   * Conditions on each option hide the player's own class, every class without mana, spells above
     the player's level and spells already known. The server builds the menu from them, so a hidden
     option cannot be chosen.
-  * Free in v1. The gossip script runs before the option's price is checked
-    (`WorldSession::HandleGossipSelectOption`), so a price would teach players who cannot pay.
+
+Phase 1 taught through server-side spells cast by SmartAI, free, because SmartAI runs before the
+core checks a price. Those rows are gone, but their reserved ranges are still cleared, so applying
+this file to a phase 1 world removes them.
 
 Every id is in Yu'lon's reserved `31xxxxx` space (design D3), checked free on 2026-11-19. The file
 deletes exactly those ranges before it inserts, so applying it twice gives the same rows.
@@ -32,7 +36,6 @@ from pathlib import Path
 
 from yulon.forever_unbound_catalog import (
     MANA_CLASSES,
-    SPELLS,
     WAITING_CLASSES,
     MentorClass,
     MentorSpell,
@@ -56,7 +59,9 @@ SHIPPED = (
 """The rendered file as the entry ships it."""
 
 ENTRY = 3100001
-"""The Mentor's `creature_template` entry, and the SmartAI rows keyed on it."""
+"""The Mentor's `creature_template` entry (phase 1's SmartAI rows were keyed on it too)."""
+SCRIPT_NAME = "npc_yulon_mentor"
+"""The C++ script the Mentor runs, from the server image's patch 0002."""
 SPAWN_GUID_FIRST = 3100001
 ROOT_MENU = 3100001
 """The Mentor's first menu: one option per other mana class."""
@@ -66,7 +71,7 @@ LAST_MENU = 3100020
 GOSSIP_OPTION_ID_BASE = 310000000
 """`GossipOptionID` is global: ours are this + (menu - 3100000) * 100 + option."""
 TEACH_SPELL_FIRST = 3100100
-"""`SPELLS[i]` is taught by the server-side spell `TEACH_SPELL_FIRST + i`."""
+"""Phase 1's server-side teach spells: still reserved and cleared, none written now."""
 TEACH_SPELL_LAST = 3100399
 
 RESERVED: dict[str, tuple[int, int]] = {
@@ -89,18 +94,11 @@ NPCFLAG_GOSSIP = 1
 UNIT_FLAGS_IMMUNE = 0x100 | 0x200
 """Immune to players and to creatures: no one can fight the Mentor."""
 
-EVENT_GOSSIP_SELECT = 62
-ACTION_INVOKER_CAST = 134
-ACTION_CLOSE_GOSSIP = 72
-CAST_TRIGGERED = 0x02
-TARGET_ACTION_INVOKER = 7
 CONDITION_SOURCE_GOSSIP_OPTION = 15
 CONDITION_CLASS = 15
 CONDITION_SPELL = 25
 CONDITION_LEVEL = 27
 COMP_TYPE_HIGH_EQ = 3
-EFFECT_LEARN_SPELL = 36
-TARGET_UNIT_CASTER = 1
 
 FRONT_YARDS = 4.0
 """How far in front of its banker each Mentor stands, on the customers' side."""
@@ -166,7 +164,7 @@ def _rows(rows: Iterable[Sequence[object]]) -> str:
     """Rows as a VALUES list, one row per line."""
     lines = []
     for row in rows:
-        cells = [_q(c) if isinstance(c, str) else str(c) for c in row]
+        cells = ["NULL" if c is None else _q(c) if isinstance(c, str) else str(c) for c in row]
         lines.append("(" + ", ".join(cells) + ")")
     return ",\n".join(lines) + ";\n"
 
@@ -186,9 +184,22 @@ def gossip_option_id(menu: int, option: int) -> int:
     return GOSSIP_OPTION_ID_BASE + (menu - 3100000) * 100 + option
 
 
-def teach_spell(spell: MentorSpell) -> int:
-    """The server-side spell that teaches `spell`."""
-    return TEACH_SPELL_FIRST + SPELLS.index(spell)
+def price_text(copper: int) -> str:
+    """`copper` the way the game counts money: "1 gold 50 silver", "7 silver", "10 copper"."""
+    gold, rest = divmod(copper, 10000)
+    silver, copper = divmod(rest, 100)
+    coins = ((gold, "gold"), (silver, "silver"), (copper, "copper"))
+    return " ".join(f"{n} {coin}" for n, coin in coins if n) or "free"
+
+
+def option_text(spell: MentorSpell) -> str:
+    """The line in a class's spell list, with the price shown before the player picks it."""
+    return f"Teach me {spell.name} ({price_text(spell.price)})."
+
+
+def box_text(spell: MentorSpell) -> str:
+    """The question the client's confirm box asks, above the price, before `spell` is taught."""
+    return f"Learn {spell.name}?"
 
 
 def _mask(classes: Iterable[MentorClass]) -> int:
@@ -243,6 +254,7 @@ def _creature() -> str:
             "unit_flags",
             "type",
             "AIName",
+            "ScriptName",
             "RegenHealth",
             "VerifiedBuild",
         ),
@@ -259,7 +271,8 @@ def _creature() -> str:
                 1,
                 UNIT_FLAGS_IMMUNE,
                 7,
-                "SmartAI",
+                "",
+                SCRIPT_NAME,
                 1,
                 0,
             )
@@ -324,21 +337,36 @@ def _menus() -> str:
         "OptionText",
         "ActionMenuID",
         "BoxMoney",
+        "BoxText",
+        "SpellID",
     )
     options: list[tuple[object, ...]] = []
     for index, mentor_class in enumerate(MANA_CLASSES):
         text = f"Teach me {mentor_class.name} spells."
         option_id = gossip_option_id(ROOT_MENU, index)
-        options.append((ROOT_MENU, option_id, index, 0, text, class_menu(index), 0))
+        options.append((ROOT_MENU, option_id, index, 0, text, class_menu(index), 0, None, None))
     waiting = len(MANA_CLASSES)
     waiting_names = " and ".join(c.name.lower() + "s" for c in WAITING_CLASSES)
     text = f"I have nothing to teach {waiting_names} yet."
-    options.append((ROOT_MENU, gossip_option_id(ROOT_MENU, waiting), waiting, 0, text, 0, 0))
+    options.append(
+        (ROOT_MENU, gossip_option_id(ROOT_MENU, waiting), waiting, 0, text, 0, 0, None, None)
+    )
     for index, mentor_class in enumerate(MANA_CLASSES):
         menu = class_menu(index)
         for option, spell in enumerate(spells_of(mentor_class)):
-            text = f"Teach me {spell.name}."
-            options.append((menu, gossip_option_id(menu, option), option, 0, text, 0, 0))
+            options.append(
+                (
+                    menu,
+                    gossip_option_id(menu, option),
+                    option,
+                    0,
+                    option_text(spell),
+                    0,
+                    spell.price,
+                    box_text(spell),
+                    spell.spell_id,
+                )
+            )
     return (
         "-- Its menus: the classes, then each class's spells (the body is the default greeting).\n"
         "-- creature_template_gossip opens the first one: without it the core plays the greeting\n"
@@ -460,120 +488,15 @@ def _conditions() -> str:
     return "-- Who sees which option\n" + _insert("conditions", columns, rows)
 
 
-def _teaching() -> str:
-    spells = [(teach_spell(s), 0, f"The Mentor: teach {s.name}", 0, 1, 1) for s in SPELLS]
-    effects = [
-        (teach_spell(s), 0, 0, EFFECT_LEARN_SPELL, s.spell_id, TARGET_UNIT_CASTER) for s in SPELLS
-    ]
-    scripts: list[tuple[object, ...]] = []
-    row = 0
-    for index, mentor_class in enumerate(MANA_CLASSES):
-        for option, spell in enumerate(spells_of(mentor_class)):
-            menu = class_menu(index)
-            gossip = (ENTRY, 0, row, 0, EVENT_GOSSIP_SELECT, 0, 100, 0, menu, option, 0, 0)
-            scripts.append(
-                (
-                    *gossip,
-                    ACTION_INVOKER_CAST,
-                    teach_spell(spell),
-                    CAST_TRIGGERED,
-                    TARGET_ACTION_INVOKER,
-                    f"The Mentor - Gossip {menu}:{option} - the player learns {spell.name}",
-                )
-            )
-            scripts.append(
-                (
-                    ENTRY,
-                    0,
-                    row + 1,
-                    0,
-                    EVENT_GOSSIP_SELECT,
-                    0,
-                    100,
-                    0,
-                    menu,
-                    option,
-                    0,
-                    0,
-                    ACTION_CLOSE_GOSSIP,
-                    0,
-                    0,
-                    TARGET_ACTION_INVOKER,
-                    f"The Mentor - Gossip {menu}:{option} - close the menu",
-                )
-            )
-            row += 2
-    scripts.append(
-        (
-            ENTRY,
-            0,
-            row,
-            0,
-            EVENT_GOSSIP_SELECT,
-            0,
-            100,
-            0,
-            ROOT_MENU,
-            len(MANA_CLASSES),
-            0,
-            0,
-            ACTION_CLOSE_GOSSIP,
-            0,
-            0,
-            TARGET_ACTION_INVOKER,
-            f"The Mentor - Gossip {ROOT_MENU}:{len(MANA_CLASSES)} - close the menu",
-        )
-    )
-    script_columns = (
-        "entryorguid",
-        "source_type",
-        "id",
-        "link",
-        "event_type",
-        "event_phase_mask",
-        "event_chance",
-        "event_flags",
-        "event_param1",
-        "event_param2",
-        "event_param3",
-        "event_param4",
-        "action_type",
-        "action_param1",
-        "action_param2",
-        "target_type",
-        "comment",
-    )
-    return (
-        "-- The spells that teach, and the script that casts them\n"
-        + _insert(
-            "serverside_spell",
-            ("Id", "DifficultyID", "SpellName", "Attributes", "CastingTimeIndex", "RangeIndex"),
-            spells,
-        )
-        + _insert(
-            "serverside_spell_effect",
-            (
-                "SpellID",
-                "EffectIndex",
-                "DifficultyID",
-                "Effect",
-                "EffectTriggerSpell",
-                "ImplicitTarget1",
-            ),
-            effects,
-        )
-        + _insert("smart_scripts", script_columns, scripts)
-    )
-
-
 HEADER = """\
--- Yu'lon: WoW Forever Unbound's Mentor (v1). Generated by `python -m yulon.forever_unbound_sql`
+-- Yu'lon: WoW Forever Unbound's Mentor. Generated by `python -m yulon.forever_unbound_sql`
 -- from yulon/forever_unbound_catalog.py; do not edit by hand.
 --
--- The Mentor teaches a character spells of other classes, free in v1, to every class with mana.
--- A choice makes the player cast a server-side spell whose one effect learns the spell, so it is
--- saved like any learned spell. Only Yu'lon's reserved ids are touched (3100001-3100020 and
--- 3100100-3100399), deleted first, so the file can be applied again.
+-- The Mentor teaches a character spells of other classes, to every class with mana, for the price
+-- the spell's own class trainers charge. Its script (npc_yulon_mentor, in Yu'lon's server image)
+-- takes the option's BoxMoney, then teaches the option's SpellID. Only Yu'lon's reserved ids are
+-- touched (3100001-3100020 and 3100100-3100399), deleted first, so the file can be applied again;
+-- that also removes phase 1's server-side teach spells and SmartAI rows.
 --
 -- The multi-class design is Wrath Unbound's (DaddyCool, Dad's MMO Lab). ForeverCore is advocaite's
 -- Forever core on TrinityCore, with Karrz's PlayerbotV2 bots.
@@ -583,7 +506,7 @@ HEADER = """\
 
 def render() -> str:
     """The whole SQL file, with LF line endings."""
-    return HEADER + "\n".join((_deletes(), _creature(), _menus(), _conditions(), _teaching()))
+    return HEADER + "\n".join((_deletes(), _creature(), _menus(), _conditions()))
 
 
 def main(argv: Sequence[str]) -> int:

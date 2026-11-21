@@ -1,7 +1,7 @@
 """WoW Forever Unbound: its catalog entry, its stack, the Mentor's spell list and its world SQL.
 
 No database and no server: the SQL is checked as text. Whether the core applies it and teaches
-from it is proven in game (the change's tasks 3.3 and 3.4).
+from it is proven in game (phase 1's tasks 3.3 and 3.4; forever-unbound-own-image's task 3.4).
 """
 
 from __future__ import annotations
@@ -34,14 +34,18 @@ MENTOR_MOUNT = f"    - ./sql/{mentor_sql.FILE_NAME}:{MENTOR_TARGET}:ro"
 # -- the catalog entry -------------------------------------------------------------------------
 
 
-def test_it_is_its_own_entry_on_the_same_server_as_wow_forever() -> None:
-    """The same pinned image, world database, client and login as WoW Forever."""
+def test_it_is_its_own_entry_on_its_own_server_of_the_same_release() -> None:
+    """Its own pinned image (D5), and WoW Forever's release, database, client and login."""
     forever, unbound = stack_of(FOREVER), stack_of(UNBOUND)
     assert UNBOUND.name == "WoW Forever Unbound" and UNBOUND.status == "beta"
     assert unbound.family == "forevercore"
-    assert unbound.image("server").ref == forever.image("server").ref
-    assert "@sha256:" in unbound.image("server").ref, "a bump must move both entries"
-    assert unbound.images == forever.images
+    server = unbound.image("server")
+    assert server.ref.startswith("ghcr.io/jauth/forever-unbound@sha256:"), server.ref
+    assert server.ref != forever.image("server").ref
+    release = forever.image("server").label.rsplit(", ", 1)[-1]
+    assert server.label.endswith(f", {release}"), "a bump must move both entries"
+    others = [i for i in unbound.images if i.role != "server"]
+    assert others == [i for i in forever.images if i.role != "server"]
     assert unbound.downloads == forever.downloads
     assert unbound.client_extract == forever.client_extract
     assert UNBOUND.emulator == FOREVER.emulator
@@ -128,6 +132,14 @@ def test_every_level_is_one_a_character_can_reach() -> None:
     assert all(1 <= spell.level <= 60 for spell in SPELLS)
 
 
+def test_every_spell_has_its_trainers_price() -> None:
+    """Copied from `trainer_spell.MoneyCost` (the catalog's docstring has the query), in copper."""
+    assert all(isinstance(spell.price, int) and spell.price > 0 for spell in SPELLS)
+    prices = {spell.spell_id: spell.price for spell in SPELLS}
+    assert prices[116] == 100, "Frostbolt: 1 silver at every mage trainer"
+    assert prices[370] == 700 and prices[1494] == 10, "trainers disagree: the lowest price"
+
+
 def test_every_mana_class_teaches_and_the_rest_wait() -> None:
     """Each mana class has spells to offer the other six; warriors and rogues get none yet."""
     for mentor_class in MANA_CLASSES:
@@ -160,23 +172,18 @@ def test_the_file_sorts_after_every_forevercore_update_and_has_lf_endings() -> N
 def test_every_table_it_fills_it_first_clears_in_the_reserved_ranges_only() -> None:
     inserted = set(re.findall(r"^INSERT INTO `(\w+)`", SQL, re.M))
     deleted = set(re.findall(r"^DELETE FROM `(\w+)`", SQL, re.M))
-    assert (
-        inserted
-        == deleted
-        == {
-            "creature",
-            "creature_template",
-            "creature_template_model",
-            "creature_template_difficulty",
-            "gossip_menu",
-            "gossip_menu_option",
-            "conditions",
-            "smart_scripts",
-            "serverside_spell",
-            "serverside_spell_effect",
-            "creature_template_gossip",
-        }
-    )
+    phase_1_only = {"smart_scripts", "serverside_spell", "serverside_spell_effect"}
+    assert inserted == {
+        "creature",
+        "creature_template",
+        "creature_template_model",
+        "creature_template_difficulty",
+        "gossip_menu",
+        "gossip_menu_option",
+        "conditions",
+        "creature_template_gossip",
+    }
+    assert deleted == inserted | phase_1_only, "phase 1's teach spells and SmartAI rows are cleared"
     for line in re.findall(r"^DELETE FROM .*$", SQL, re.M):
         numbers = [int(n) for n in re.findall(r"\b\d{7}\b", line)]
         assert numbers, f"a delete without a reserved id: {line}"
@@ -217,21 +224,45 @@ def test_every_id_it_makes_is_in_design_d3s_ranges() -> None:
     assert len(mentor_sql.BANKERS) == 6, "one Mentor per Classic capital"
     last_menu = mentor_sql.class_menu(len(MANA_CLASSES) - 1)
     assert mentor_sql.ROOT_MENU < last_menu <= mentor_sql.LAST_MENU
-    teach = [mentor_sql.teach_spell(s) for s in SPELLS]
-    assert min(teach) == mentor_sql.TEACH_SPELL_FIRST
-    assert max(teach) <= mentor_sql.TEACH_SPELL_LAST
     option_ids = [int(n) for n in re.findall(r"\(\d{7}, (31000\d{4}),", SQL)]
     assert option_ids and all(310000000 <= n <= 310009999 for n in option_ids)
     assert len(option_ids) == len(set(option_ids)), "GossipOptionID is global, so each once"
 
 
-def test_each_spell_has_a_teaching_spell_a_script_and_its_gates() -> None:
-    for spell in SPELLS:
-        teach = mentor_sql.teach_spell(spell)
-        assert f"({teach}, 0, 0, 36, {spell.spell_id}, 1)" in SQL, "learn effect on the caster"
-        assert f", 134, {teach}, 2, 7, " in SQL, "the player casts it, triggered"
-        assert f"25, 0, {spell.spell_id}, 0, 0, '', 1," in SQL, "hidden once known"
-        assert f"27, 0, {spell.level}, 3, 0, '', 0," in SQL, "hidden below its level"
+def test_each_spell_option_carries_its_price_its_spell_and_its_gates() -> None:
+    """The script reads the price (`BoxMoney`) and the spell (`SpellID`) from the option row."""
+    for index, mentor_class in enumerate(MANA_CLASSES):
+        menu = mentor_sql.class_menu(index)
+        for option, spell in enumerate(spells_of(mentor_class)):
+            name = spell.name.replace("'", "''")  # SQL quoting: Hunter's Mark
+            price = mentor_sql.price_text(spell.price)
+            row = (
+                f"({menu}, {mentor_sql.gossip_option_id(menu, option)}, {option}, 0, "
+                f"'Teach me {name} ({price}).', 0, {spell.price}, 'Learn {name}?', "
+                f"{spell.spell_id})"
+            )
+            assert row in SQL, row
+            assert f"25, 0, {spell.spell_id}, 0, 0, '', 1," in SQL, "hidden once known"
+            assert f"27, 0, {spell.level}, 3, 0, '', 0," in SQL, "hidden below its level"
+
+
+def test_the_price_is_shown_in_the_list_the_way_the_game_counts_money() -> None:
+    """Each spell's line names its price, so a player sees it before picking the spell."""
+    assert mentor_sql.price_text(100) == "1 silver"
+    assert mentor_sql.price_text(10) == "10 copper"
+    assert mentor_sql.price_text(15005) == "1 gold 50 silver 5 copper"
+    assert mentor_sql.price_text(20000) == "2 gold"
+    assert "'Teach me Frostbolt (1 silver).'" in SQL
+    assert "'Teach me Purge (7 silver).'" in SQL
+
+
+def test_options_that_teach_nothing_carry_no_price_and_no_spell() -> None:
+    """Class lists and "nothing yet": the script leaves submenus to the core, closes the rest."""
+    options = SQL.split("INSERT INTO `gossip_menu_option`")[1].split(";\n")[0]
+    first = f"({mentor_sql.ROOT_MENU}, "
+    root = [line for line in options.splitlines() if line.startswith(first)]
+    assert len(root) == len(MANA_CLASSES) + 1
+    assert all(line.rstrip(",").endswith(", 0, NULL, NULL)") for line in root)
 
 
 def test_each_class_list_is_hidden_from_its_own_class_and_from_classes_without_mana() -> None:
@@ -246,12 +277,15 @@ def test_each_class_list_is_hidden_from_its_own_class_and_from_classes_without_m
     assert f"{waiting}{1 | 8}, 0, 0, '', 0," in SQL, "warriors and rogues see 'nothing yet'"
 
 
-def test_nothing_is_charged_in_v1() -> None:
-    """The gossip script runs before the price check in this core, so v1 takes no money."""
-    options = SQL.split("INSERT INTO `gossip_menu_option`")[1].split(";\n")[0]
-    assert re.findall(r", (\d+)\)", options) and set(re.findall(r", (\d+)\)", options)) == {"0"}
+def test_the_mentor_runs_its_script_and_no_smartai() -> None:
+    """Phase 1 taught through SmartAI, which runs before the core checks a price."""
+    assert mentor_sql.SCRIPT_NAME == "npc_yulon_mentor"
+    assert f", 7, '', '{mentor_sql.SCRIPT_NAME}', 1, 0)" in SQL
+    assert "SmartAI'" not in SQL
+    assert "INSERT INTO `smart_scripts`" not in SQL
+    assert "INSERT INTO `serverside_spell" not in SQL
 
 
 def test_the_mentor_cannot_be_fought_and_is_friendly_to_everyone() -> None:
     assert "'The Mentor', 'Forever Unbound', 35, 1," in SQL
-    assert f", {0x100 | 0x200}, 7, 'SmartAI'," in SQL
+    assert f", {0x100 | 0x200}, 7, '', 'npc_yulon_mentor'," in SQL

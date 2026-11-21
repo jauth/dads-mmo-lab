@@ -743,3 +743,20 @@ def test_start_on_a_loader_tab_hands_the_server_no_account(qapp: object, tmp_pat
     view = _ffxi_view(control)
     view.start_server()
     assert control.started_with == [("", None)]
+
+
+def test_a_stack_starts_lines_reach_the_server_console(qapp: object, tmp_path: Path) -> None:
+    """A Start that downloads a new server first says so in the console (forever-unbound D4)."""
+    from yulon import docker
+    from yulon.stack_controller import StackController, StackControlSeams
+
+    seams = StackControlSeams(
+        platform_id=lambda: "windows",
+        state_of=lambda _name: docker.ContainerState(missing=True),
+        container_project=lambda _name: None,
+        port_conflicts=lambda _ports: [],
+    )
+    controller = StackController(FFXI, tmp_path, seams=seams)
+    view = SingleServerView(FFXI, controller, run_job=run_inline, poll_ms=60_000)
+    controller.say("FFXI's server changed. Downloading it before the start.")
+    assert "Downloading it before the start." in view.console.text()

@@ -15,7 +15,9 @@ from typing import Any
 import pytest
 
 from yulon import docker
+from yulon.catalog import composegen
 from yulon.catalog.catalog import SingleEntry, load_catalog
+from yulon.catalog.installer import InstallerError
 from yulon.catalog.stack_install import stack_of
 from yulon.single_controller import RUNNING, STARTING, STOPPED, UNKNOWN, SingleServerError
 from yulon.stack_controller import StackController, StackControlSeams, server_named_by
@@ -40,6 +42,11 @@ class Fake:
     stopped: list[tuple[Path, float | None]] = field(default_factory=list)
     followed: list[tuple[Path, tuple[str, ...]]] = field(default_factory=list)
     up_error: Exception | None = None
+    calls: list[str] = field(default_factory=list)
+    compose_after_refresh: str | None = None  # what the refresh leaves in docker-compose.yml
+    refresh_error: Exception | None = None
+    refreshed: tuple[str, ...] = ()
+    pull_code: int = 0
 
     def all_up(self, project: str) -> Fake:
         for name in LISTENERS:
@@ -49,9 +56,23 @@ class Fake:
         return self
 
     def up(self, server_dir: Path, **_: Any) -> None:
+        self.calls.append("up")
         if self.up_error is not None:
             raise self.up_error
         self.started.append(server_dir)
+
+    def refresh(self, entry: SingleEntry, server_dir: Path) -> Sequence[str]:
+        self.calls.append("refresh")
+        if self.refresh_error is not None:
+            raise self.refresh_error
+        if self.compose_after_refresh is not None:
+            (server_dir / composegen.BASE_FILE).write_text(self.compose_after_refresh)
+        return self.refreshed
+
+    def pull(self, server_dir: Path, *, sink: docker.OutputSink, **_: Any) -> docker.AttachedRun:
+        self.calls.append("pull")
+        sink("server Pulled")
+        return docker.AttachedRun(self.pull_code, ("pull access denied",) if self.pull_code else ())
 
     def stop(self, server_dir: Path, *, timeout: float | None = None) -> None:
         self.stopped.append((server_dir, timeout))
@@ -70,6 +91,8 @@ class Fake:
             up=self.up,
             stop=self.stop,
             follow=self.follow,
+            refresh=self.refresh,
+            pull=self.pull,
         )
 
 
@@ -141,6 +164,64 @@ def test_start_names_the_server_whose_container_holds_our_ports(tmp_path: Path) 
     ), "the server, not its containers"
     assert "wowforever-" not in str(refused.value)
     assert fake.started == []
+
+
+def test_start_with_nothing_changed_pulls_nothing(tmp_path: Path) -> None:
+    """The ordinary Start: the files already match the catalog, so it is only `up`."""
+    (tmp_path / composegen.BASE_FILE).write_text("image: a@sha256:1")
+    fake = Fake(compose_after_refresh="image: a@sha256:1")
+    _controller(fake, tmp_path).start()
+    assert fake.calls == ["refresh", "up"]
+
+
+def test_start_pulls_a_changed_image_before_up_and_says_so(tmp_path: Path) -> None:
+    """An install made by an older Yu'lon: the new image is downloaded, then started (D4)."""
+    (tmp_path / composegen.BASE_FILE).write_text("image: a@sha256:1")
+    fake = Fake(compose_after_refresh="image: b@sha256:2", refreshed=("Wrote docker-compose.yml",))
+    controller = _controller(fake, tmp_path)
+    said: list[str] = []
+    controller.say = said.append
+    controller.start()
+    assert fake.calls == ["refresh", "pull", "up"]
+    assert said[0] == "Wrote docker-compose.yml"
+    assert "Downloading it before the start" in said[1]
+    assert said[-1] == "server Pulled", "the pull's own output reaches the console"
+
+
+def test_a_failed_pull_starts_nothing_and_says_why(tmp_path: Path) -> None:
+    (tmp_path / composegen.BASE_FILE).write_text("image: a@sha256:1")
+    fake = Fake(compose_after_refresh="image: b@sha256:2", pull_code=1)
+    with pytest.raises(SingleServerError, match="could not download its server.*pull access"):
+        _controller(fake, tmp_path).start()
+    assert fake.calls == ["refresh", "pull"] and fake.started == []
+
+
+def test_a_compose_file_yulon_did_not_write_refuses_the_start(tmp_path: Path) -> None:
+    refusal = InstallerError("docker-compose.yml was not written by Yu'lon, so it was left alone.")
+    fake = Fake(refresh_error=refusal)
+    with pytest.raises(SingleServerError, match="could not be started: docker-compose.yml was not"):
+        _controller(fake, tmp_path).start()
+    assert fake.calls == ["refresh"], "nothing pulled, nothing started"
+
+
+def test_a_port_conflict_refuses_before_anything_is_written(tmp_path: Path) -> None:
+    fake = Fake(port_holders=["wowforever-bnet"], compose_after_refresh="image: b@sha256:2")
+    with pytest.raises(SingleServerError, match="Stop it first"):
+        _controller(fake, tmp_path).start()
+    assert fake.calls == []
+    assert not (tmp_path / composegen.BASE_FILE).exists()
+
+
+def test_the_real_refresh_writes_the_entrys_compose_files(tmp_path: Path) -> None:
+    """The default seam is the install stage's own render, and a second one changes nothing."""
+    from yulon.stack_controller import refresh_install
+
+    unbound = load_catalog().get_single("wow-forever-unbound")
+    first = refresh_install(unbound, tmp_path)
+    assert "Wrote docker-compose.yml" in first
+    ref = stack_of(unbound).image("server").ref
+    assert ref in (tmp_path / composegen.BASE_FILE).read_text(encoding="utf-8")
+    assert refresh_install(unbound, tmp_path) == []
 
 
 def test_a_container_no_server_runs_is_named_as_itself() -> None:
