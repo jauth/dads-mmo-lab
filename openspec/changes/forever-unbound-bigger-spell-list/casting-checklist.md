@@ -1,0 +1,223 @@
+# Mentor rank-1 casting checklist (task 4.3)
+
+Alphabetical, the order of the spellbook's General tab. Hun already knows every spell in the
+first list. Cast each once: it should use mana (or health, or nothing) and do its effect.
+Note any that fail.
+
+## Other classes (184 spells, all learned by Hun)
+
+- [ ] Abolish Disease              Priest   lvl 32       552  `.learn 552`
+- [ ] Abolish Poison               Druid    lvl 26      2893  `.learn 2893`
+- [ ] Amplify Magic                Mage     lvl 18      1008  `.learn 1008`
+- [ ] Ancestral Spirit             Shaman   lvl 12      2008  `.learn 2008`
+- [ ] Arcane Explosion             Mage     lvl 14      1449  `.learn 1449`
+- [ ] Arcane Intellect             Mage     lvl  1      1459  `.learn 1459`
+- [ ] Arcane Missiles              Mage     lvl  8      5143  `.learn 5143`
+- [ ] Astral Recall                Shaman   lvl 30       556  `.learn 556`
+- [ ] Bane of Agony                Warlock  lvl  8       980  `.learn 980`
+- [ ] Bane of Doom                 Warlock  lvl 60       603  `.learn 603`
+- [ ] Banish                       Warlock  lvl 28       710  `.learn 710`
+- [ ] Barkskin                     Druid    lvl 44     22812  `.learn 22812`
+- [ ] Blessing of Freedom          Paladin  lvl 18      1044  `.learn 1044`
+- [ ] Blessing of Kings            Paladin  lvl 20     20217  `.learn 20217`
+- [ ] Blessing of Might            Paladin  lvl  4     19740  `.learn 19740`
+- [ ] Blessing of Protection       Paladin  lvl 10      1022  `.learn 1022`
+- [ ] Blessing of Sacrifice        Paladin  lvl 46      6940  `.learn 6940`
+- [ ] Blessing of Wisdom           Paladin  lvl 14     19742  `.learn 19742`
+- [ ] Blink                        Mage     lvl 20      1953  `.learn 1953`
+- [ ] Blizzard                     Mage     lvl 20        10  `.learn 10`
+- [ ] Chain Heal                   Shaman   lvl 40      1064  `.learn 1064`
+- [ ] Chain Lightning              Shaman   lvl 32       421  `.learn 421`
+- [ ] Cleanse                      Paladin  lvl 42      4987  `.learn 4987`
+- [ ] Comprehend Scroll            Mage     lvl  6   1296017  `.learn 1296017`
+- [ ] Concentration Aura           Paladin  lvl 22     19746  `.learn 19746`
+- [ ] Cone of Cold                 Mage     lvl 26       120  `.learn 120`
+- [ ] Conjure Food                 Mage     lvl  6       587  `.learn 587`
+- [ ] Conjure Mana Agate           Mage     lvl 28       759  `.learn 759`
+- [ ] Conjure Water                Mage     lvl  4      5504  `.learn 5504`
+- [ ] Consecration                 Paladin  lvl 20     26573  `.learn 26573`
+- [ ] Corruption                   Warlock  lvl  4       172  `.learn 172`
+- [ ] Counterspell                 Mage     lvl 24      2139  `.learn 2139`
+- [ ] Create Firestone             Warlock  lvl 28      6366  `.learn 6366`
+- [ ] Cure Disease                 Priest   lvl 14       528  `.learn 528`
+- [ ] Cure Disease                 Shaman   lvl 22      2870  `.learn 2870`
+- [ ] Cure Poison                  Shaman   lvl 16       526  `.learn 526`
+- [ ] Curse of Recklessness        Warlock  lvl 14       704  `.learn 704`
+- [ ] Curse of the Elements        Warlock  lvl 20    440892  `.learn 440892`
+- [ ] Curse of Tongues             Warlock  lvl 26      1714  `.learn 1714`
+- [ ] Curse of Weakness            Warlock  lvl  4       702  `.learn 702`
+- [ ] Dampen Magic                 Mage     lvl 12       604  `.learn 604`
+- [ ] Death Coil                   Warlock  lvl 42      6789  `.learn 6789`
+- [ ] Demon Armor                  Warlock  lvl 20       706  `.learn 706`
+- [ ] Demon Skin                   Warlock  lvl  1       687  `.learn 687`
+- [ ] Detect Invisibility          Warlock  lvl 26       132  `.learn 132`
+- [ ] Devotion Aura                Paladin  lvl  1       465  `.learn 465`
+- [ ] Devouring Plague             Priest   lvl 20      2944  `.learn 2944`
+- [ ] Dispel Magic                 Priest   lvl 18       527  `.learn 527`
+- [ ] Divine Intervention          Paladin  lvl 30     19752  `.learn 19752`
+- [ ] Divine Protection            Paladin  lvl  6       498  `.learn 498`
+- [ ] Divine Shield                Paladin  lvl 34       642  `.learn 642`
+- [ ] Divine Spirit                Priest   lvl 30     14752  `.learn 14752`
+- [ ] Drain Life                   Warlock  lvl 14       689  `.learn 689`
+- [ ] Drain Mana                   Warlock  lvl 24      5138  `.learn 5138`
+- [ ] Drain Soul                   Warlock  lvl 10      1120  `.learn 1120`
+- [ ] Earth Shock                  Shaman   lvl  4      8042  `.learn 8042`
+- [ ] Entangling Roots             Druid    lvl  8       339  `.learn 339`
+- [ ] Evocation                    Mage     lvl 20     12051  `.learn 12051`
+- [ ] Exorcism                     Paladin  lvl 20       879  `.learn 879`
+- [ ] Eye of Kilrogg               Warlock  lvl 22       126  `.learn 126`
+- [ ] Fade                         Priest   lvl  8       586  `.learn 586`
+- [ ] Faerie Fire                  Druid    lvl 18       770  `.learn 770`
+- [ ] Far Sight                    Shaman   lvl 26      6196  `.learn 6196`
+- [ ] Fear                         Warlock  lvl  8      5782  `.learn 5782`
+- [ ] Fear Ward                    Priest   lvl 20      6346  `.learn 6346`
+- [ ] Fire Blast                   Mage     lvl  6      2136  `.learn 2136`
+- [ ] Fire Nova                    Shaman   lvl 12    408341  `.learn 408341`
+- [ ] Fire Resistance Aura         Paladin  lvl 36     19891  `.learn 19891`
+- [ ] Fire Ward                    Mage     lvl 20       543  `.learn 543`
+- [ ] Fireball                     Mage     lvl  1       133  `.learn 133`
+- [ ] Flame Shock                  Shaman   lvl 10      8050  `.learn 8050`
+- [ ] Flamestrike                  Mage     lvl 16      2120  `.learn 2120`
+- [ ] Flametongue Weapon           Shaman   lvl 10      8024  `.learn 8024`
+- [ ] Flash Heal                   Priest   lvl 20      2061  `.learn 2061`
+- [ ] Flash of Light               Paladin  lvl 20     19750  `.learn 19750`
+- [ ] Frost Armor                  Mage     lvl  1       168  `.learn 168`
+- [ ] Frost Blast                  Mage     lvl 24   1326053  `.learn 1326053`
+- [ ] Frost Nova                   Mage     lvl 10       122  `.learn 122`
+- [ ] Frost Resistance Aura        Paladin  lvl 32     19888  `.learn 19888`
+- [ ] Frost Shock                  Shaman   lvl 20      8056  `.learn 8056`
+- [ ] Frost Ward                   Mage     lvl 22      6143  `.learn 6143`
+- [ ] Frostbolt                    Mage     lvl  4       116  `.learn 116`
+- [ ] Frostbrand Weapon            Shaman   lvl 20      8033  `.learn 8033`
+- [ ] Frostfire Bolt               Mage     lvl 40    401502  `.learn 401502`
+- [ ] Greater Heal                 Priest   lvl 40      2060  `.learn 2060`
+- [ ] Hammer of Justice            Paladin  lvl  8       853  `.learn 853`
+- [ ] Hammer of Wrath              Paladin  lvl 44     24275  `.learn 24275`
+- [ ] Heal                         Priest   lvl 16      2054  `.learn 2054`
+- [ ] Healing Touch                Druid    lvl  1      5185  `.learn 5185`
+- [ ] Healing Wave                 Shaman   lvl  1       331  `.learn 331`
+- [ ] Hellfire                     Warlock  lvl 30      1949  `.learn 1949`
+- [ ] Hibernate                    Druid    lvl 18      2637  `.learn 2637`
+- [ ] Holy Fire                    Priest   lvl 20     14914  `.learn 14914`
+- [ ] Holy Light                   Paladin  lvl  1       635  `.learn 635`
+- [ ] Holy Strike                  Paladin  lvl  6       679  `.learn 679`
+- [ ] Holy Wrath                   Paladin  lvl 50      2812  `.learn 2812`
+- [ ] Howl of Terror               Warlock  lvl 40      5484  `.learn 5484`
+- [ ] Hurricane                    Druid    lvl 40     16914  `.learn 16914`
+- [ ] Ice Armor                    Mage     lvl 30      7302  `.learn 7302`
+- [ ] Immolate                     Warlock  lvl  1       348  `.learn 348`
+- [ ] Inner Fire                   Priest   lvl 12       588  `.learn 588`
+- [ ] Innervate                    Druid    lvl 40     29166  `.learn 29166`
+- [ ] Judgement                    Paladin  lvl  1     10321  `.learn 10321`
+- [ ] Judgement                    Paladin  lvl  4     20271  `.learn 20271`
+- [ ] Lay on Hands                 Paladin  lvl 10       633  `.learn 633`
+- [ ] Lesser Heal                  Priest   lvl  1      2050  `.learn 2050`
+- [ ] Lesser Healing Wave          Shaman   lvl 20      8004  `.learn 8004`
+- [ ] Levitate                     Priest   lvl 34      1706  `.learn 1706`
+- [ ] Life Tap                     Warlock  lvl  6      1454  `.learn 1454`
+- [ ] Lightning Bolt               Shaman   lvl  1       403  `.learn 403`
+- [ ] Lightning Shield             Shaman   lvl  8       324  `.learn 324`
+- [ ] Mage Armor                   Mage     lvl 34      6117  `.learn 6117`
+- [ ] Mana Burn                    Priest   lvl 24      8129  `.learn 8129`
+- [ ] Mana Shield                  Mage     lvl 20      1463  `.learn 1463`
+- [ ] Mark of the Wild             Druid    lvl  1      1126  `.learn 1126`
+- [ ] Mind Blast                   Priest   lvl 10      8092  `.learn 8092`
+- [ ] Mind Control                 Priest   lvl 30       605  `.learn 605`
+- [ ] Mind Soothe                  Priest   lvl 20       453  `.learn 453`
+- [ ] Mind Vision                  Priest   lvl 22      2096  `.learn 2096`
+- [ ] Moonfire                     Druid    lvl  4      8921  `.learn 8921`
+- [ ] Omen of Clarity              Druid    lvl 20     16864  `.learn 16864`
+- [ ] Polymorph                    Mage     lvl  8       118  `.learn 118`
+- [ ] Portal: Darnassus            Mage     lvl 50     11419  `.learn 11419`
+- [ ] Portal: Ironforge            Mage     lvl 40     11416  `.learn 11416`
+- [ ] Portal: Orgrimmar            Mage     lvl 40     11417  `.learn 11417`
+- [ ] Portal: Stormwind            Mage     lvl 40     10059  `.learn 10059`
+- [ ] Portal: Thunder Bluff        Mage     lvl 50     11420  `.learn 11420`
+- [ ] Portal: Undercity            Mage     lvl 40     11418  `.learn 11418`
+- [ ] Power Word: Fortitude        Priest   lvl  1      1243  `.learn 1243`
+- [ ] Power Word: Shield           Priest   lvl  6        17  `.learn 17`
+- [ ] Prayer of Healing            Priest   lvl 30       596  `.learn 596`
+- [ ] Psychic Scream               Priest   lvl 14      8122  `.learn 8122`
+- [ ] Purge                        Shaman   lvl 12       370  `.learn 370`
+- [ ] Purify                       Paladin  lvl  8      1152  `.learn 1152`
+- [ ] Rain of Fire                 Warlock  lvl 20      5740  `.learn 5740`
+- [ ] Rebirth                      Druid    lvl 20     20484  `.learn 20484`
+- [ ] Regrowth                     Druid    lvl 12      8936  `.learn 8936`
+- [ ] Reincarnation                Shaman   lvl 30     20608  `.learn 20608`
+- [ ] Rejuvenation                 Druid    lvl  4       774  `.learn 774`
+- [ ] Remove Curse                 Druid    lvl 24      2782  `.learn 2782`
+- [ ] Remove Lesser Curse          Mage     lvl 18       475  `.learn 475`
+- [ ] Renew                        Priest   lvl  8       139  `.learn 139`
+- [ ] Resurrection                 Priest   lvl 10      2006  `.learn 2006`
+- [ ] Retribution Aura             Paladin  lvl 16      7294  `.learn 7294`
+- [ ] Revive                       Druid    lvl 12    437138  `.learn 437138`
+- [ ] Righteous Fury               Paladin  lvl 10     25780  `.learn 25780`
+- [ ] Ritual of Summoning          Warlock  lvl 20       698  `.learn 698`
+- [ ] Rockbiter Weapon             Shaman   lvl  1      8017  `.learn 8017`
+- [ ] Scorch                       Mage     lvl 22      2948  `.learn 2948`
+- [ ] Seal of Fury                 Paladin  lvl 10   1311649  `.learn 1311649`
+- [ ] Seal of Justice              Paladin  lvl 22     20164  `.learn 20164`
+- [ ] Seal of Light                Paladin  lvl 30     20165  `.learn 20165`
+- [ ] Seal of Righteousness        Paladin  lvl  1     21084  `.learn 21084`
+- [ ] Seal of the Crusader         Paladin  lvl  6     21082  `.learn 21082`
+- [ ] Seal of Wisdom               Paladin  lvl 38     20166  `.learn 20166`
+- [ ] Searing Pain                 Warlock  lvl 18      5676  `.learn 5676`
+- [ ] Sense Demons                 Warlock  lvl 24      5500  `.learn 5500`
+- [ ] Shackle Undead               Priest   lvl 20      9484  `.learn 9484`
+- [ ] Shadow Bolt                  Warlock  lvl  1       686  `.learn 686`
+- [ ] Shadow Protection            Priest   lvl 30       976  `.learn 976`
+- [ ] Shadow Resistance Aura       Paladin  lvl 28     19876  `.learn 19876`
+- [ ] Shadow Ward                  Warlock  lvl 32      6229  `.learn 6229`
+- [ ] Shadow Word: Death           Priest   lvl 32   1309595  `.learn 1309595`
+- [ ] Shadow Word: Pain            Priest   lvl  4       589  `.learn 589`
+- [ ] Slow Fall                    Mage     lvl 12       130  `.learn 130`
+- [ ] Smite                        Priest   lvl  1       585  `.learn 585`
+- [ ] Soothe Animal                Druid    lvl 22      2908  `.learn 2908`
+- [ ] Soul Fire                    Warlock  lvl 48      6353  `.learn 6353`
+- [ ] Starfire                     Druid    lvl 20      2912  `.learn 2912`
+- [ ] Teleport: Darnassus          Mage     lvl 30      3565  `.learn 3565`
+- [ ] Teleport: Ironforge          Mage     lvl 20      3562  `.learn 3562`
+- [ ] Teleport: Orgrimmar          Mage     lvl 20      3567  `.learn 3567`
+- [ ] Teleport: Stormwind          Mage     lvl 20      3561  `.learn 3561`
+- [ ] Teleport: Thunder Bluff      Mage     lvl 30      3566  `.learn 3566`
+- [ ] Teleport: Undercity          Mage     lvl 20      3563  `.learn 3563`
+- [ ] Thorns                       Druid    lvl  6       467  `.learn 467`
+- [ ] Tiger's Fury                 Druid    lvl 24      5217  `.learn 5217`
+- [ ] Tranquility                  Druid    lvl 30       740  `.learn 740`
+- [ ] Turn Undead                  Paladin  lvl 24      2878  `.learn 2878`
+- [ ] Unending Breath              Warlock  lvl 16      5697  `.learn 5697`
+- [ ] Water Breathing              Shaman   lvl 22       131  `.learn 131`
+- [ ] Water Walking                Shaman   lvl 28       546  `.learn 546`
+- [ ] Windfury Weapon              Shaman   lvl 30      8232  `.learn 8232`
+- [ ] Wrath                        Druid    lvl  1      5176  `.learn 5176`
+
+## Hunter (28 spells): skip on Hun, for a non-hunter test character
+
+- [ ] Aspect of the Beast          Hunter   lvl 30     13161  `.learn 13161`
+- [ ] Aspect of the Cheetah        Hunter   lvl 20      5118  `.learn 5118`
+- [ ] Aspect of the Monkey         Hunter   lvl  4     13163  `.learn 13163`
+- [ ] Aspect of the Pack           Hunter   lvl 40     13159  `.learn 13159`
+- [ ] Aspect of the Wild           Hunter   lvl 46     20043  `.learn 20043`
+- [ ] Beast Lore                   Hunter   lvl 13      1462  `.learn 1462`
+- [ ] Disengage                    Hunter   lvl 20       781  `.learn 781`
+- [ ] Eagle Eye                    Hunter   lvl 14      6197  `.learn 6197`
+- [ ] Explosive Trap               Hunter   lvl 34     13813  `.learn 13813`
+- [ ] Feign Death                  Hunter   lvl 28      5384  `.learn 5384`
+- [ ] Flare                        Hunter   lvl 32      1543  `.learn 1543`
+- [ ] Freezing Trap                Hunter   lvl 20      1499  `.learn 1499`
+- [ ] Frost Trap                   Hunter   lvl 28     13809  `.learn 13809`
+- [ ] Hunter's Mark                Hunter   lvl  6      1130  `.learn 1130`
+- [ ] Immolation Trap              Hunter   lvl 16     13795  `.learn 13795`
+- [ ] Mongoose Bite                Hunter   lvl 16      1495  `.learn 1495`
+- [ ] Rapid Fire                   Hunter   lvl 26      3045  `.learn 3045`
+- [ ] Raptor Strike                Hunter   lvl  1      2973  `.learn 2973`
+- [ ] Scare Beast                  Hunter   lvl 14      1513  `.learn 1513`
+- [ ] Track Beasts                 Hunter   lvl  1      1494  `.learn 1494`
+- [ ] Track Demons                 Hunter   lvl  1     19878  `.learn 19878`
+- [ ] Track Dragonkin              Hunter   lvl  1     19879  `.learn 19879`
+- [ ] Track Elementals             Hunter   lvl  1     19880  `.learn 19880`
+- [ ] Track Giants                 Hunter   lvl  1     19882  `.learn 19882`
+- [ ] Track Hidden                 Hunter   lvl  1     19885  `.learn 19885`
+- [ ] Track Humanoids              Hunter   lvl  1     19883  `.learn 19883`
+- [ ] Track Undead                 Hunter   lvl  1     19884  `.learn 19884`
+- [ ] Wing Clip                    Hunter   lvl 12      2974  `.learn 2974`

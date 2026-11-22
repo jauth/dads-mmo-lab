@@ -56,18 +56,28 @@ You only say yes to the administrator prompt once: both servers share the login 
 ## The Mentor
 
 The Mentor is a robed figure standing in front of a banker in Stormwind, Ironforge, Darnassus,
-Orgrimmar, Undercity and Thunder Bluff. Talk to it and pick a class, then pick a spell. Each spell
-in the list shows its price, for example "Teach me Frostbolt (1 silver)." The game asks you to
-confirm and shows the price again. Say yes, and the money is taken and you learn the spell on
-the spot.[^spells]
+Orgrimmar, Undercity and Thunder Bluff. Talk to it and pick a class, then a level range, then a
+spell. Each spell in the list shows its rank and price, for example "Teach me Frostbolt (Rank 3)
+(9 silver)." The game asks you to confirm and shows the price again. Say yes, and the money is
+taken and you learn the spell on the spot.[^spells]
 
 - **Who can learn:** every class that uses mana: Paladin, Hunter, Priest, Shaman, Mage, Warlock
   and Druid. Your own class is not on the list; you already have a trainer for that.
-- **What it teaches:** a few starting spells of each class, such as Frostbolt, Renew, Moonfire,
-  Hammer of Justice, Earth Shock, Corruption and Hunter's Mark. Each one appears from the level a
-  trainer of that class would teach it.[^spells]
-- **What it costs:** the same as at that class's trainer, from 10 copper for a level 1 spell to a
-  few silver. If you cannot pay, the game says so, and nothing is taken.[^spells]
+- **What it teaches:** nearly everything a class's trainer teaches up to level 60, every rank of
+  it, from Fireball and Frostbolt to Holy Light, Renew, Rejuvenation and Shadow Bolt. Each spell
+  appears from the level a trainer of that class would teach it.[^spells]
+- **Level ranges:** each class's spells are split into "levels 1 to 15", "16 to 30" and "31 to
+  60", by the level at which a spell is first learned. Every rank of a spell stays in its range:
+  Frostbolt's later ranks are under 1 to 15 too. The higher ranges appear once you reach them.
+- **Ranks:** you learn them in order. Rank 2 appears once you know rank 1, and so on, so each
+  spell shows only the next rank you can learn.
+- **Starting spells:** a class's very first spells (Fireball, Frost Armor, Smite, Lesser Heal, Holy
+  Light, Seal of Righteousness, Wrath, Healing Touch, Shadow Bolt, Demon Skin, Lightning Bolt,
+  Healing Wave and Raptor Strike) cost 10 copper at rank 1. Their later ranks cost what that class's trainer charges.
+- **What it costs:** the same as at that class's trainer, from 10 copper at level 1 to a few gold
+  near level 60. If you cannot pay, the game says so, and nothing is taken.[^spells]
+- **What it leaves out:** talents, forms and stances, totems, pets, shots that need a bow or gun,
+  and armor or weapon skills. They lean on things only that class has.
 - **Where they go:** the spellbook's **General** tab. Drag them to your action bars like any
   spell. They stay learned when you log out.
 - **Warriors and rogues:** these spells cost mana, which warriors and rogues do not have, so the
@@ -80,8 +90,8 @@ class's spells. See [Playerbots](/games-and-bots/playerbots-overview.md).
 
 ## Limits for now
 
-- A short list of starting spells. A bigger list, with more spells and higher levels, is planned.
-- Only spells, not talents: the talent window still shows your own class.
+- Only spells, not talents: the talent window still shows your own class, and spells that come
+  from talents are not taught.
 - No new weapons or armor: what your class can wear is unchanged.
 - No spells for warriors and rogues yet.
 - No Steam Deck Gaming Mode tiles yet. Play from the app itself.
@@ -113,8 +123,16 @@ Check your internet connection and press **Start** again. The download picks up 
 and your realm is unchanged until it finishes.
 
 **I cannot see a spell in the Mentor's list.**
-Three things hide a spell: your character is below the level it needs, you already know it, or it
-belongs to your own class. Level up and talk to the Mentor again.
+Four things hide a spell: your character is below the level it needs, you already know it, it
+belongs to your own class, or it is left out (see "What it leaves out" above). Look under the
+level range where the spell is first learned. Level up and talk to the Mentor again.
+
+**I cannot see rank 3 of a spell.**
+Learn rank 2 first. The Mentor shows each spell's next rank only, once you know the rank before it
+and are high enough level for it.
+
+**The "31 to 60" range is missing.**
+It appears at level 31. The "16 to 30" range appears at level 16.
 
 **I learned a spell but cannot cast it.**
 Check that it is on an action bar from the spellbook's **General** tab, and that you have the mana

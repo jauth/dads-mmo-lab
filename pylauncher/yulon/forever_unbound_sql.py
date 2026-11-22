@@ -8,15 +8,18 @@ and `test_wow_forever_unbound.py` fails while the shipped file and this renderin
 
 The Mentor's menus and rules are data; what it does when a spell is picked is C++:
   * The Mentor is a creature with a gossip menu: one option per other mana class, each opening
-    that class's list.
+    that class's level bands (`BANDS`), each band opening its spells. A band holds every rank of
+    the lines whose rank 1 is in it.
   * Its `ScriptName` is `npc_yulon_mentor`, the script Yu'lon's server image adds
     (`catalog/installers/wow-forever-unbound/patches/0002-yulon-mentor-script.patch`). A spell
     option carries the spell it teaches (`SpellID`) and its price (`BoxMoney`), which the client
     shows in its confirm box. The script checks the price, takes it, then `Player::LearnSpell`s the
     spell, which has no class check and is saved like any learned spell. It never teaches a bot.
-  * Conditions on each option hide the player's own class, every class without mana, spells above
-    the player's level and spells already known. The server builds the menu from them, so a hidden
-    option cannot be chosen.
+  * Conditions on each option hide the player's own class, every class without mana, bands above
+    the player's level, spells above the player's level, spells already known, and a rank above 1
+    until the rank before it is known. The server builds the menu from them, so a hidden option
+    cannot be chosen, and each line shows at most one rank: no menu passes the core's 32-option
+    limit (`forever_unbound_catalog.worst_case_visible`).
 
 Phase 1 taught through server-side spells cast by SmartAI, free, because SmartAI runs before the
 core checks a price. Those rows are gone, but their reserved ranges are still cleared, so applying
@@ -35,11 +38,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from yulon.forever_unbound_catalog import (
+    BANDS,
     MANA_CLASSES,
     WAITING_CLASSES,
     MentorClass,
     MentorSpell,
-    spells_of,
+    has_ranks,
+    spells_in,
 )
 
 FILE_NAME = "2026_11_20_00_world_yulon_forever_unbound_mentor.sql"
@@ -66,10 +71,14 @@ SPAWN_GUID_FIRST = 3100001
 ROOT_MENU = 3100001
 """The Mentor's first menu: one option per other mana class."""
 CLASS_MENU_FIRST = 3100002
-"""The first class list; `MANA_CLASSES[i]`'s list is `CLASS_MENU_FIRST + i`."""
-LAST_MENU = 3100020
+"""The first class menu; `MANA_CLASSES[i]`'s is `CLASS_MENU_FIRST + i`. It offers its bands."""
+BAND_MENU_FIRST = 3100021
+"""The first band menu: band `b` of `MANA_CLASSES[i]` is `BAND_MENU_FIRST + i * len(BANDS) + b`."""
+LAST_MENU = 3100099
+"""The last reserved menu. 3100021-3100099 were checked free on 2026-11-20."""
 GOSSIP_OPTION_ID_BASE = 310000000
-"""`GossipOptionID` is global: ours are this + (menu - 3100000) * 100 + option."""
+"""`GossipOptionID` is global: ours are this + (menu - 3100000) * 1000 + option, so a menu may
+hold up to 1000 options (a band holds every rank of its lines) and all stay below 310100000."""
 TEACH_SPELL_FIRST = 3100100
 """Phase 1's server-side teach spells: still reserved and cleared, none written now."""
 TEACH_SPELL_LAST = 3100399
@@ -179,9 +188,14 @@ def class_menu(index: int) -> int:
     return CLASS_MENU_FIRST + index
 
 
+def band_menu(index: int, band: int) -> int:
+    """The menu of band `band` (an index in `BANDS`) of `MANA_CLASSES[index]`'s spells."""
+    return BAND_MENU_FIRST + index * len(BANDS) + band
+
+
 def gossip_option_id(menu: int, option: int) -> int:
     """The global `GossipOptionID` of option `option` in `menu`."""
-    return GOSSIP_OPTION_ID_BASE + (menu - 3100000) * 100 + option
+    return GOSSIP_OPTION_ID_BASE + (menu - 3100000) * 1000 + option
 
 
 def price_text(copper: int) -> str:
@@ -192,14 +206,30 @@ def price_text(copper: int) -> str:
     return " ".join(f"{n} {coin}" for n, coin in coins if n) or "free"
 
 
+def spell_title(spell: MentorSpell) -> str:
+    """The spell's name, with its rank where its line has more than one: "Frostbolt (Rank 3)"."""
+    return f"{spell.name} (Rank {spell.rank})" if has_ranks(spell) else spell.name
+
+
 def option_text(spell: MentorSpell) -> str:
-    """The line in a class's spell list, with the price shown before the player picks it."""
-    return f"Teach me {spell.name} ({price_text(spell.price)})."
+    """The line in a band's spell list, with the price shown before the player picks it."""
+    return f"Teach me {spell_title(spell)} ({price_text(spell.price)})."
 
 
 def box_text(spell: MentorSpell) -> str:
     """The question the client's confirm box asks, above the price, before `spell` is taught."""
-    return f"Learn {spell.name}?"
+    return f"Learn {spell_title(spell)}?"
+
+
+def band_text(band: int) -> str:
+    """A class menu's line for one band: "Spells first learned at levels 1 to 15."."""
+    low, high = BANDS[band]
+    return f"Spells first learned at levels {low} to {high}."
+
+
+def bands_of(index: int) -> tuple[int, ...]:
+    """The bands of `MANA_CLASSES[index]` that hold spells, as indexes in `BANDS`."""
+    return tuple(b for b in range(len(BANDS)) if spells_in(MANA_CLASSES[index], b))
 
 
 def _mask(classes: Iterable[MentorClass]) -> int:
@@ -326,9 +356,20 @@ def _creature() -> str:
     return f"-- The Mentor, in {places}\n" + template + model + difficulty + creature
 
 
+def _spell_options(index: int, mentor_class: MentorClass) -> Iterable[tuple[int, int, MentorSpell]]:
+    """Each spell option of `MANA_CLASSES[index]`: its band menu, its option index, its spell."""
+    for band in bands_of(index):
+        menu = band_menu(index, band)
+        for option, spell in enumerate(spells_in(mentor_class, band)):
+            yield menu, option, spell
+
+
 def _menus() -> str:
     menus = [(ROOT_MENU, GREETING_TEXT, 0)]
     menus += [(class_menu(i), GREETING_TEXT, 0) for i in range(len(MANA_CLASSES))]
+    menus += [
+        (band_menu(i, b), GREETING_TEXT, 0) for i in range(len(MANA_CLASSES)) for b in bands_of(i)
+    ]
     option_columns = (
         "MenuID",
         "GossipOptionID",
@@ -351,9 +392,14 @@ def _menus() -> str:
     options.append(
         (ROOT_MENU, gossip_option_id(ROOT_MENU, waiting), waiting, 0, text, 0, 0, None, None)
     )
-    for index, mentor_class in enumerate(MANA_CLASSES):
+    for index in range(len(MANA_CLASSES)):
         menu = class_menu(index)
-        for option, spell in enumerate(spells_of(mentor_class)):
+        for option, band in enumerate(bands_of(index)):
+            target = band_menu(index, band)
+            row = (menu, gossip_option_id(menu, option), option, 0, band_text(band), target)
+            options.append(row + (0, None, None))
+    for index, mentor_class in enumerate(MANA_CLASSES):
+        for menu, option, spell in _spell_options(index, mentor_class):
             options.append(
                 (
                     menu,
@@ -368,7 +414,8 @@ def _menus() -> str:
                 )
             )
     return (
-        "-- Its menus: the classes, then each class's spells (the body is the default greeting).\n"
+        "-- Its menus: the classes, each class's level bands, then each band's spells (the body\n"
+        "-- is the default greeting).\n"
         "-- creature_template_gossip opens the first one: without it the core plays the greeting\n"
         "-- and shows no menu.\n"
         + _insert(
@@ -443,8 +490,34 @@ def _conditions() -> str:
         )
     )
     for index, mentor_class in enumerate(MANA_CLASSES):
-        for option, spell in enumerate(spells_of(mentor_class)):
-            menu = class_menu(index)
+        for option, band in enumerate(bands_of(index)):
+            low, high = BANDS[band]
+            if low > 1:
+                rows.append(
+                    _condition(
+                        class_menu(index),
+                        option,
+                        CONDITION_LEVEL,
+                        low,
+                        COMP_TYPE_HIGH_EQ,
+                        False,
+                        f"The Mentor - {mentor_class.name} {low}-{high} - from level {low}",
+                    )
+                )
+    for index, mentor_class in enumerate(MANA_CLASSES):
+        for menu, option, spell in _spell_options(index, mentor_class):
+            if spell.previous is not None:
+                rows.append(
+                    _condition(
+                        menu,
+                        option,
+                        CONDITION_SPELL,
+                        spell.previous,
+                        0,
+                        False,
+                        f"The Mentor - {spell_title(spell)} - once the rank before is known",
+                    )
+                )
             rows.append(
                 _condition(
                     menu,
@@ -453,7 +526,7 @@ def _conditions() -> str:
                     spell.level,
                     COMP_TYPE_HIGH_EQ,
                     False,
-                    f"The Mentor - {spell.name} - from level {spell.level}",
+                    f"The Mentor - {spell_title(spell)} - from level {spell.level}",
                 )
             )
             rows.append(
@@ -464,7 +537,7 @@ def _conditions() -> str:
                     spell.spell_id,
                     0,
                     True,
-                    f"The Mentor - {spell.name} - not once known",
+                    f"The Mentor - {spell_title(spell)} - not once known",
                 )
             )
     columns = (
@@ -495,7 +568,7 @@ HEADER = """\
 -- The Mentor teaches a character spells of other classes, to every class with mana, for the price
 -- the spell's own class trainers charge. Its script (npc_yulon_mentor, in Yu'lon's server image)
 -- takes the option's BoxMoney, then teaches the option's SpellID. Only Yu'lon's reserved ids are
--- touched (3100001-3100020 and 3100100-3100399), deleted first, so the file can be applied again;
+-- touched (3100001-3100099 and 3100100-3100399), deleted first, so the file can be applied again;
 -- that also removes phase 1's server-side teach spells and SmartAI rows.
 --
 -- The multi-class design is Wrath Unbound's (DaddyCool, Dad's MMO Lab). ForeverCore is advocaite's

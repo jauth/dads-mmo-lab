@@ -860,6 +860,11 @@ _NOT_A_USER_ENTRY_POINT = {
         "a developer tool -- `python -m yulon.forever_unbound_sql` rewrites the shipped "
         "Mentor SQL from the spell list and never runs anything for a user"
     ),
+    "yulon.forever_unbound_curate": (
+        "a developer tool -- `python -m yulon.forever_unbound_curate` rewrites the Mentor's "
+        "generated spell list from a world database export and the client's tables, and "
+        "never runs anything for a user"
+    ),
 }
 
 

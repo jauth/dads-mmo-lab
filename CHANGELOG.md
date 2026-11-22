@@ -36,6 +36,7 @@ Changed: Opening Yu'lon while it is already running brings the open window to th
 - When a server can't start because another is running, Yu'lon now names the one to stop first.
 - The Mentor on WoW Forever Unbound now charges what each spell's own class trainer charges, and shows each spell's price in its list.
 - Starting a WoW Forever server brings an older install up to date first and keeps your characters.
+- The Mentor on WoW Forever Unbound now teaches every rank of other classes' spells up to level 60, by level range.
 
 ## v0.9.32-Public — 2026-11-09
 
